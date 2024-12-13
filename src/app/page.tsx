@@ -1,7 +1,13 @@
-import { PREFIX } from "@/lib/constants";
+"use client";
 
-export default async function Home() {
-  const data = await fetch(`${PREFIX}/api`);
-  const json = await data.json();
-  return <div className="container">{json.message}</div>;
+import { useEffect, useState } from "react";
+
+export default function Home() {
+  const [status, setStatus] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api")
+      .then((res) => res.json())
+      .then((data) => setStatus(data.message));
+  }, []);
+  return <div className="container">APOYO ESCOLAR RV{status}</div>;
 }
