@@ -8,6 +8,27 @@
       "when": 1734102774707,
       "tag": "0000_glorious_mac_gargan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1734119580476,
+      "tag": "0001_daily_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1734119817075,
+      "tag": "0002_massive_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1734120145813,
+      "tag": "0003_rapid_bucky",
+      "breakpoints": true
     }
   ]
 }
