@@ -41,9 +41,18 @@ export const POST = buildEndpoint(
       })
       .returning();
 
-    const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET!, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      {
+        userId: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        isAdmin: newUser.isAdmin,
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     return NextResponse.json(
       { message: "Usuario registrado exitosamente", token },

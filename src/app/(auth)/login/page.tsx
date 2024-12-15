@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { catchAxiosError } from "@/lib/catch-axios-error";
-import { cookies } from "@/lib/cookies";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { setCookie } from "cookies-next/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -49,7 +49,7 @@ export default function LoginPage() {
     startTransition(async () => {
       try {
         const { token } = await Login(data);
-        cookies.set("token", token);
+        setCookie("token", token);
         router.push("/");
       } catch (error) {
         catchAxiosError(error);
