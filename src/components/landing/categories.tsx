@@ -1,13 +1,19 @@
-import { getCategories } from "@/api/categories";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { http } from "@/lib/http";
 import { Category } from "@/types/category";
 import { BookOpen } from "lucide-react";
 import { Suspense } from "react";
 
 async function CategoryList() {
-  const { categories } = await getCategories();
+  const {
+    data: { categories },
+  } = await http.get("/categories");
+
+  const parentCategories = categories.filter(
+    (category: Category) => !category.parentId
+  );
 
   if (categories.length === 0) {
     return null;
@@ -19,7 +25,7 @@ async function CategoryList() {
         Explora nuestras categorías
       </h2>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category: Category) => (
+        {parentCategories.map((category: Category) => (
           <Card key={category.id} className="overflow-hidden">
             <div className="bg-primary p-6">
               <BookOpen className="h-12 w-12 text-white" />
@@ -61,7 +67,9 @@ function CategorySkeleton() {
 }
 
 export default async function Categories() {
-  const { categories } = await getCategories();
+  const {
+    data: { categories },
+  } = await http.get("/categories");
 
   if (categories.length === 0) {
     return null;

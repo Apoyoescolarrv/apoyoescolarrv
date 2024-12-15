@@ -1,6 +1,4 @@
-import { http, createServerHttp } from "@/lib/http";
-import { Category } from "@/types/category";
-import { Course } from "@/api/courses";
+import { createServerHttp, http } from "@/lib/http";
 
 export interface AdminStats {
   categories: number;
@@ -10,8 +8,6 @@ export interface AdminStats {
 
 export interface AdminData {
   stats: AdminStats;
-  categories: Category[];
-  courses: Course[];
 }
 
 // Para uso en el cliente

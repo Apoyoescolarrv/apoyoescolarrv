@@ -1,3 +1,6 @@
+import { getServerAdminData } from "@/api/admin";
+import { CategoriesTable } from "@/components/admin/categories-table";
+import { CoursesTable } from "@/components/admin/courses-table";
 import { Header } from "@/components/landing/header";
 import {
   Card,
@@ -6,13 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { CategoryForm } from "@/components/admin/category-form";
-import { CourseForm } from "@/components/admin/course-form";
-import { CategoriesTable } from "@/components/admin/categories-table";
-import { CoursesTable } from "@/components/admin/courses-table";
-import { getServerAdminData } from "@/api/admin";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cookies } from "next/headers";
 
 export default async function AdminPage() {
@@ -23,11 +21,7 @@ export default async function AdminPage() {
     return null;
   }
 
-  const {
-    stats,
-    categories: categoriesList,
-    courses: coursesList,
-  } = await getServerAdminData(token);
+  const { stats } = await getServerAdminData(token);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -82,30 +76,38 @@ export default async function AdminPage() {
           <TabsContent value="categories" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Gestión de Categorías</CardTitle>
+                <CardTitle>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Categorías
+                    </h2>
+                  </div>
+                </CardTitle>
                 <CardDescription>
                   Crea y administra las categorías de los cursos
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <CategoryForm />
-                <Separator />
-                <CategoriesTable categories={categoriesList} />
+                <CategoriesTable />
               </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="courses" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Cursos</CardTitle>
+              <CardHeader className="pb-0">
+                <CardTitle>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Gestión de Cursos
+                    </h2>
+                  </div>
+                </CardTitle>
                 <CardDescription>
                   Crea y administra los cursos de la plataforma
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <CourseForm />
-                <Separator />
-                <CoursesTable courses={coursesList} />
+                <CoursesTable />
               </CardContent>
             </Card>
           </TabsContent>

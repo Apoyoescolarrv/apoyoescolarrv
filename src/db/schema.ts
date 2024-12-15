@@ -13,7 +13,10 @@ import {
 export const categories = pgTable("categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  parentId: uuid("parent_id").references((): AnyPgColumn => categories.id),
+  parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, {
+    onDelete: "set null",
+    onUpdate: "cascade",
+  }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -21,7 +24,9 @@ export const courses = pgTable("courses", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   description: text("description"),
-  categoryId: uuid("category_id").references(() => categories.id),
+  categoryId: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
   price: integer("price").notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -35,7 +40,7 @@ export const courses = pgTable("courses", {
 export const modules = pgTable("modules", {
   id: uuid("id").primaryKey().defaultRandom(),
   courseId: uuid("course_id")
-    .references(() => courses.id)
+    .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
   order: integer("order"),
@@ -44,7 +49,7 @@ export const modules = pgTable("modules", {
 export const classes = pgTable("classes", {
   id: uuid("id").primaryKey().defaultRandom(),
   moduleId: uuid("module_id")
-    .references(() => modules.id)
+    .references(() => modules.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
   content: text("content"),
@@ -68,10 +73,10 @@ export const users = pgTable("users", {
 export const purchases = pgTable("purchases", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   courseId: uuid("course_id")
-    .references(() => courses.id)
+    .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
   paymentStatus: varchar("payment_status", { length: 50 }).default("pending"),
   paymentDetails: jsonb("payment_details"),
@@ -81,10 +86,10 @@ export const purchases = pgTable("purchases", {
 export const userProgress = pgTable("user_progress", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   classId: uuid("class_id")
-    .references(() => classes.id)
+    .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
   completed: boolean("completed").default(false),
   progressTime: integer("progress_time"),
@@ -93,12 +98,12 @@ export const userProgress = pgTable("user_progress", {
 export const sharedClasses = pgTable("shared_classes", {
   id: uuid("id").primaryKey().defaultRandom(),
   sourceCourseId: uuid("source_course_id")
-    .references(() => courses.id)
+    .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
   targetCourseId: uuid("target_course_id")
-    .references(() => courses.id)
+    .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
   classId: uuid("class_id")
-    .references(() => classes.id)
+    .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
 });

@@ -1,7 +1,9 @@
 "use client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import {
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+} from "@/api/categories/mutations";
+import { useCategoriesQuery } from "@/api/categories/query";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,10 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useTransition } from "react";
-import { createCategory, getCategories } from "@/api/categories";
-import { Category } from "@/types/category";
 import { catchAxiosError } from "@/lib/catch-axios-error";
+import { Category } from "@/types/category";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useTransition } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -32,38 +36,43 @@ const formSchema = z.object({
   parentId: z.string().optional(),
 });
 
-export function CategoryForm() {
+interface CategoryFormProps {
+  onSuccess?: () => void;
+  category?: Category;
+}
+
+export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { data: categories = [] } = useCategoriesQuery();
+  const { mutateAsync: createCategory } = useCreateCategoryMutation();
+  const { mutateAsync: updateCategory } = useUpdateCategoryMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: category?.name || "",
+      parentId: category?.parentId || undefined,
     },
   });
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await getCategories();
-        setCategories(data.categories);
-      } catch (error) {
-        catchAxiosError(error);
-      }
-    }
-    loadCategories();
-  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
       try {
-        await createCategory(values);
-        toast({
-          title: "Categoría creada",
-          description: "La categoría se ha creado correctamente.",
-        });
+        if (category) {
+          await updateCategory({ id: category.id, ...values });
+          toast({
+            title: "Categoría actualizada",
+            description: "La categoría se ha actualizada correctamente.",
+          });
+        } else {
+          await createCategory(values);
+          toast({
+            title: "Categoría creada",
+            description: "La categoría se ha creado correctamente.",
+          });
+        }
+        onSuccess?.();
         form.reset();
       } catch (error) {
         catchAxiosError(error);
@@ -116,7 +125,7 @@ export function CategoryForm() {
           )}
         />
         <Button isLoading={pending} type="submit" disabled={pending}>
-          Crear Categoría
+          {category ? "Actualizar" : "Crear"} Categoría
         </Button>
       </form>
     </Form>

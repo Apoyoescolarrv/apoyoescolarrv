@@ -16,19 +16,15 @@ export const GET = buildEndpoint(
     }
 
     // Obtener estadísticas y datos
-    const [
-      [categoriesCount],
-      [coursesCount],
-      [usersCount],
-      categoriesList,
-      coursesList,
-    ] = await Promise.all([
-      db.select({ count: count() }).from(categories),
-      db.select({ count: count() }).from(courses),
-      db.select({ count: count() }).from(users),
-      db.select().from(categories).orderBy(categories.createdAt),
-      db.select().from(courses).orderBy(courses.createdAt),
-    ]);
+    const [[categoriesCount], [coursesCount], [usersCount]] = await Promise.all(
+      [
+        db.select({ count: count() }).from(categories),
+        db.select({ count: count() }).from(courses),
+        db.select({ count: count() }).from(users),
+        db.select().from(categories).orderBy(categories.createdAt),
+        db.select().from(courses).orderBy(courses.createdAt),
+      ]
+    );
 
     const data: AdminData = {
       stats: {
@@ -36,16 +32,6 @@ export const GET = buildEndpoint(
         courses: coursesCount.count,
         users: usersCount.count,
       },
-      categories: categoriesList.map((cat) => ({
-        ...cat,
-        createdAt: cat.createdAt?.toISOString() || new Date().toISOString(),
-      })),
-      courses: coursesList.map((course) => ({
-        ...course,
-        createdAt: course.createdAt?.toISOString() || new Date().toISOString(),
-        updatedAt: course.updatedAt?.toISOString() || new Date().toISOString(),
-        isActive: course.isActive ?? true,
-      })),
     };
 
     return NextResponse.json(data);

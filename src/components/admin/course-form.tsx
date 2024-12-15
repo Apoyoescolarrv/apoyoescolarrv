@@ -1,7 +1,9 @@
 "use client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useCategoriesQuery } from "@/api/categories/query";
+import {
+  useCreateCourseMutation,
+  useUpdateCourseMutation,
+} from "@/api/courses/mutations";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,12 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useTransition } from "react";
-import { createCourse } from "@/api/courses";
-import { getCategories } from "@/api/categories";
-import { Category } from "@/types/category";
 import { catchAxiosError } from "@/lib/catch-axios-error";
+import { Course } from "@/types/courses";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useTransition } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -42,41 +45,48 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function CourseForm() {
+interface CourseFormProps {
+  onSuccess?: () => void;
+  course?: Course;
+}
+
+export function CourseForm({ onSuccess, course }: CourseFormProps) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { data: categories = [] } = useCategoriesQuery();
+  const { mutateAsync: createCourse } = useCreateCourseMutation();
+  const { mutateAsync: updateCourse } = useUpdateCourseMutation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      price: 0,
-      isActive: true,
+      title: course?.title || "",
+      description: course?.description || "",
+      categoryId: course?.categoryId || undefined,
+      price: course?.price || 0,
+      isActive: course?.isActive ?? true,
+      thumbnail: course?.thumbnail || "",
+      previewVideoUrl: course?.previewVideoUrl || "",
     },
   });
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await getCategories();
-        setCategories(data.categories);
-      } catch (error) {
-        catchAxiosError(error);
-      }
-    }
-    loadCategories();
-  }, []);
 
   async function onSubmit(values: FormValues) {
     startTransition(async () => {
       try {
-        await createCourse(values);
-        toast({
-          title: "Curso creado",
-          description: "El curso se ha creado correctamente.",
-        });
+        if (course) {
+          await updateCourse({ id: course.id, ...values });
+          toast({
+            title: "Curso actualizado",
+            description: "El curso se ha actualizado correctamente.",
+          });
+        } else {
+          await createCourse(values);
+          toast({
+            title: "Curso creado",
+            description: "El curso se ha creado correctamente.",
+          });
+        }
+        onSuccess?.();
         form.reset();
       } catch (error) {
         catchAxiosError(error);
@@ -220,8 +230,8 @@ export function CourseForm() {
           )}
         />
 
-        <Button type="submit" disabled={pending}>
-          {pending ? "Creando..." : "Crear Curso"}
+        <Button isLoading={pending} type="submit" disabled={pending}>
+          {course ? "Actualizar" : "Crear"} Curso
         </Button>
       </form>
     </Form>
