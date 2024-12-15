@@ -1,27 +1,40 @@
-import axios from "axios";
-import { getCookie as getCookieClient } from "cookies-next/client";
+import axios, { InternalAxiosRequestConfig } from "axios";
 import { PREFIX } from "./constants";
 
+const baseURL = `${PREFIX}/api`;
+
+// Cliente HTTP para el navegador
 export const http = axios.create({
-  baseURL: `${PREFIX}/api`,
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-http.interceptors.request.use(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async (config: any) => {
-    const token = getCookieClient("token");
+// Solo agregar el interceptor si estamos en el cliente
+if (typeof window !== "undefined") {
+  http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1];
+
     if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+      config.headers.set("authorization", `Bearer ${token}`);
     }
     return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  });
+}
+
+// Cliente HTTP para el servidor
+export const createServerHttp = (token: string) => {
+  const serverHttp = axios.create({
+    baseURL,
+    headers: {
+      "Content-Type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+  });
+
+  return serverHttp;
+};
