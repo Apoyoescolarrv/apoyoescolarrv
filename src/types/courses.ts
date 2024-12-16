@@ -1,18 +1,18 @@
 export interface Course {
   id: string;
   title: string;
-  description?: string;
-  categoryId?: string;
+  description: string | null;
+  categoryId: string | null;
   price: number;
   isActive: boolean;
-  thumbnail?: string;
-  previewVideoUrl?: string;
   createdAt: string;
   updatedAt: string;
+  thumbnail: string | null;
+  previewVideoUrl: string | null;
 }
 
 export interface CoursesResponse {
-  courses: Course[];
+  data: Course[];
   pagination: {
     total: number;
     currentPage: number;

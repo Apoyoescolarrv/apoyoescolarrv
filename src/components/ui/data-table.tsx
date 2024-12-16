@@ -43,6 +43,8 @@ interface DataTableProps<TData, TValue> {
   pageCount?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  onSearch?: (value: string) => void;
+  searchValue?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,6 +61,8 @@ export function DataTable<TData, TValue>({
   pageCount = 0,
   currentPage = 1,
   onPageChange,
+  onSearch,
+  searchValue,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -153,14 +157,19 @@ export function DataTable<TData, TValue>({
           <Input
             placeholder={searchPlaceholder}
             value={
+              searchValue ??
               (table.getColumn(searchableColumn)?.getFilterValue() as string) ??
               ""
             }
-            onChange={(event) =>
-              table
-                .getColumn(searchableColumn)
-                ?.setFilterValue(event.target.value)
-            }
+            onChange={(event) => {
+              if (onSearch) {
+                onSearch(event.target.value);
+              } else {
+                table
+                  .getColumn(searchableColumn)
+                  ?.setFilterValue(event.target.value);
+              }
+            }}
             className="max-w-sm"
             disabled={isLoading}
           />

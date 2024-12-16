@@ -22,6 +22,7 @@ import { ConfirmDialog } from "../ui/confirm-dialog";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { useDeleteCategoryMutation } from "@/api/categories/mutations";
 import { Badge } from "../ui/badge";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface CategoriesTableProps {
   onCategoryCreated?: () => void;
@@ -29,6 +30,8 @@ interface CategoriesTableProps {
 
 export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
     Category | undefined
@@ -36,13 +39,21 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
   const [deletingCategory, setDeletingCategory] = useState<
     Category | undefined
   >();
-  const { data, isLoading } = useCategoriesQuery(page);
+  const { data, isLoading } = useCategoriesQuery({
+    page,
+    search: debouncedSearch,
+  });
   const { mutateAsync: deleteCategory, isPending: isDeleting } =
     useDeleteCategoryMutation();
   const { toast } = useToast();
-
+  console.log(data);
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
   };
 
   const handleDelete = async () => {
@@ -74,7 +85,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
           const parentId = row.getValue("parentId");
           if (!parentId) return "-";
 
-          const parentCategory = data?.categories.find(
+          const parentCategory = data?.data.find(
             (category) => category.id === parentId
           );
           return <Badge variant="secondary">{parentCategory?.name}</Badge>;
@@ -88,9 +99,9 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
       },
       {
         id: "actions",
-        header: "Acciones",
+        header: () => <div className="text-center">Acciones</div>,
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-center text-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -112,7 +123,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         ),
       },
     ],
-    [data?.categories]
+    [data?.data]
   );
 
   return (
@@ -155,13 +166,15 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         }
         searchableColumn="name"
         columns={columns}
-        data={data?.categories || []}
+        data={data?.data || []}
         isLoading={isLoading}
         manualPagination
         pageCount={data?.pagination.totalPages || 0}
         currentPage={page}
         onPageChange={handlePageChange}
         pageSize={10}
+        onSearch={handleSearch}
+        searchValue={search}
       />
       <ConfirmDialog
         open={!!deletingCategory}

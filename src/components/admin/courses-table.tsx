@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Course } from "@/types/courses";
+import { Category } from "@/types/category";
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -22,6 +23,7 @@ import { ConfirmDialog } from "../ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { useCategoriesQuery } from "@/api/categories/query";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface CoursesTableProps {
   onCourseCreated?: () => void;
@@ -29,10 +31,15 @@ interface CoursesTableProps {
 
 export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [open, setOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | undefined>();
   const [deletingCourse, setDeletingCourse] = useState<Course | undefined>();
-  const { data, isLoading } = useCoursesQuery(page);
+  const { data, isLoading } = useCoursesQuery({
+    page,
+    search: debouncedSearch,
+  });
   const { data: categoriesData } = useCategoriesQuery();
   const { mutateAsync: deleteCourse, isPending: isDeleting } =
     useDeleteCourseMutation();
@@ -40,6 +47,11 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
   };
 
   const handleDelete = async () => {
@@ -87,8 +99,8 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
           const categoryId = row.getValue("categoryId");
           if (!categoryId) return "-";
 
-          const category = categoriesData?.categories.find(
-            (cat) => cat.id === categoryId
+          const category = categoriesData?.data?.find(
+            (cat: Category) => cat.id === categoryId
           );
           return <Badge variant="secondary">{category?.name || "-"}</Badge>;
         },
@@ -101,9 +113,9 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
       },
       {
         id: "actions",
-        header: "Acciones",
+        header: () => <div className="text-center">Acciones</div>,
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-center text-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -125,7 +137,7 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         ),
       },
     ],
-    [categoriesData?.categories]
+    [categoriesData?.data]
   );
 
   return (
@@ -141,7 +153,7 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
           >
             <DialogTrigger asChild>
               <Button size="sm" disabled={isLoading}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 Agregar Curso
               </Button>
             </DialogTrigger>
@@ -168,13 +180,15 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         }
         searchableColumn="title"
         columns={columns}
-        data={data?.courses || []}
+        data={data?.data || []}
         isLoading={isLoading}
         manualPagination
         pageCount={data?.pagination.totalPages || 0}
         currentPage={page}
         onPageChange={handlePageChange}
         pageSize={10}
+        onSearch={handleSearch}
+        searchValue={search}
       />
       <ConfirmDialog
         open={!!deletingCourse}

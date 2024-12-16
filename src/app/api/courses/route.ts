@@ -1,5 +1,5 @@
 import { db } from "@/db/drizzle";
-import { categories } from "@/db/schema";
+import { courses } from "@/db/schema";
 import {
   buildEndpoint,
   getPaginationParams,
@@ -14,22 +14,25 @@ export const GET = buildEndpoint(
     const { searchParams } = new URL(req.url);
     const { page, limit, offset } = getPaginationParams(searchParams);
 
-    const searchQuery = getSearchQuery(searchParams, categories, {
-      searchField: "name",
+    const searchQuery = getSearchQuery(searchParams, courses, {
+      searchField: "title",
       transliterateSearch: true,
     });
 
-    const baseQuery = db.select().from(categories);
+    const baseQuery = db.select().from(courses);
     const query = searchQuery ? baseQuery.where(searchQuery) : baseQuery;
 
     const [totalCount] = await db
       .select({ count: count() })
-      .from(query.as("filtered_categories"));
+      .from(query.as("filtered_courses"));
 
-    const categoriesList = await query.limit(limit).offset(offset);
+    const coursesList = await query
+      .limit(limit)
+      .offset(offset)
+      .orderBy(courses.createdAt);
 
-    const response: PaginatedResponse<typeof categories.$inferSelect> = {
-      data: categoriesList,
+    const response: PaginatedResponse<typeof courses.$inferSelect> = {
+      data: coursesList,
       pagination: {
         total: totalCount.count,
         currentPage: page,
@@ -41,10 +44,10 @@ export const GET = buildEndpoint(
     return NextResponse.json(response);
   },
   {
-    errorMessage: "Error al obtener las categorías",
+    errorMessage: "Error al obtener los cursos",
     pagination: true,
     search: {
-      searchField: "name",
+      searchField: "title",
       transliterateSearch: true,
     },
   }
@@ -52,43 +55,40 @@ export const GET = buildEndpoint(
 
 export const POST = buildEndpoint(
   async (req: NextRequest) => {
-    const { name, parentId } = await req.json();
-    const [newCategory] = await db
-      .insert(categories)
-      .values({ name, parentId })
-      .returning();
-    return NextResponse.json({ category: newCategory });
+    const data = await req.json();
+    const [newCourse] = await db.insert(courses).values(data).returning();
+    return NextResponse.json({ course: newCourse });
   },
-  { errorMessage: "Error al crear la categoría" }
+  { errorMessage: "Error al crear el curso" }
 );
 
 export const PUT = buildEndpoint(
   async (req: NextRequest) => {
-    const { id, name, parentId } = await req.json();
+    const { id, ...data } = await req.json();
 
     if (!id) {
       return NextResponse.json(
-        { error: "El ID de la categoría es requerido" },
+        { error: "El ID del curso es requerido" },
         { status: 400 }
       );
     }
 
-    const [updatedCategory] = await db
-      .update(categories)
-      .set({ name, parentId })
-      .where(eq(categories.id, id))
+    const [updatedCourse] = await db
+      .update(courses)
+      .set(data)
+      .where(eq(courses.id, id))
       .returning();
 
-    if (!updatedCategory) {
+    if (!updatedCourse) {
       return NextResponse.json(
-        { error: "Categoría no encontrada" },
+        { error: "Curso no encontrado" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ category: updatedCategory });
+    return NextResponse.json({ course: updatedCourse });
   },
-  { errorMessage: "Error al actualizar la categoría" }
+  { errorMessage: "Error al actualizar el curso" }
 );
 
 export const DELETE = buildEndpoint(
@@ -98,24 +98,24 @@ export const DELETE = buildEndpoint(
 
     if (!id) {
       return NextResponse.json(
-        { error: "El ID de la categoría es requerido" },
+        { error: "El ID del curso es requerido" },
         { status: 400 }
       );
     }
 
-    const [deletedCategory] = await db
-      .delete(categories)
-      .where(eq(categories.id, id))
+    const [deletedCourse] = await db
+      .delete(courses)
+      .where(eq(courses.id, id))
       .returning();
 
-    if (!deletedCategory) {
+    if (!deletedCourse) {
       return NextResponse.json(
-        { error: "Categoría no encontrada" },
+        { error: "Curso no encontrado" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ category: deletedCategory });
+    return NextResponse.json({ course: deletedCourse });
   },
-  { errorMessage: "Error al eliminar la categoría" }
+  { errorMessage: "Error al eliminar el curso" }
 );

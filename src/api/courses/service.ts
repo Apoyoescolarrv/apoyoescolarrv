@@ -1,29 +1,17 @@
 import { http } from "@/lib/http";
-import { Course } from "@/types/courses";
-
-interface CoursesResponse {
-  courses: Course[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPages: number;
-    limit: number;
-  };
-}
-
-interface CourseResponse {
-  course: Course;
-}
+import { CoursesResponse, CourseResponse, Course } from "@/types/courses";
 
 export const CoursesService = {
-  getCourses: async (page = 1, limit = 10) => {
+  getCourses: async (page = 1, limit = 10, search?: string) => {
     const { data } = await http.get<CoursesResponse>(
-      `/courses?page=${page}&limit=${limit}`
+      `/courses?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`
     );
     return data;
   },
 
-  createCourse: async (courseData: Partial<Course>) => {
+  createCourse: async (
+    courseData: Omit<Course, "id" | "createdAt" | "updatedAt">
+  ) => {
     const { data } = await http.post<CourseResponse>("/courses", courseData);
     return data.course;
   },
@@ -31,16 +19,16 @@ export const CoursesService = {
   updateCourse: async ({
     id,
     ...courseData
-  }: { id: string } & Partial<Course>) => {
-    const { data } = await http.put<CourseResponse>(
-      `/courses/${id}`,
-      courseData
-    );
+  }: Partial<Course> & { id: string }) => {
+    const { data } = await http.put<CourseResponse>(`/courses`, {
+      id,
+      ...courseData,
+    });
     return data.course;
   },
 
   deleteCourse: async (id: string) => {
-    const { data } = await http.delete<CourseResponse>(`/courses/${id}`);
+    const { data } = await http.delete<CourseResponse>(`/courses?id=${id}`);
     return data.course;
   },
 };

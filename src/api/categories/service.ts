@@ -2,9 +2,11 @@ import { http } from "@/lib/http";
 import { CategoriesResponse, CategoryResponse } from "@/types/category";
 
 export const CategoriesService = {
-  getCategories: async (page = 1, limit = 10) => {
+  getCategories: async (page = 1, limit = 10, search?: string) => {
     const { data } = await http.get<CategoriesResponse>(
-      `/categories?page=${page}&limit=${limit}`
+      `/categories?page=${page}&limit=${limit}${
+        search ? `&search=${search}` : ""
+      }`
     );
     return data;
   },

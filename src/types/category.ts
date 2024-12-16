@@ -6,7 +6,7 @@ export interface Category {
 }
 
 export interface CategoriesResponse {
-  categories: Category[];
+  data: Category[];
   pagination: {
     total: number;
     currentPage: number;

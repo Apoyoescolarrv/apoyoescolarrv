@@ -35,12 +35,12 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: "El título debe tener al menos 2 caracteres.",
   }),
-  description: z.string().optional(),
-  categoryId: z.string().optional(),
+  description: z.string().nullable(),
+  categoryId: z.string().nullable(),
   price: z.number().min(0),
   isActive: z.boolean().default(true),
-  thumbnail: z.string().url().optional(),
-  previewVideoUrl: z.string().url().optional(),
+  thumbnail: z.string().url().nullable(),
+  previewVideoUrl: z.string().url().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,7 +53,7 @@ interface CourseFormProps {
 export function CourseForm({ onSuccess, course }: CourseFormProps) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const { data: categories = [] } = useCategoriesQuery();
+  const { data: categoriesData } = useCategoriesQuery();
   const { mutateAsync: createCourse } = useCreateCourseMutation();
   const { mutateAsync: updateCourse } = useUpdateCourseMutation();
 
@@ -61,12 +61,12 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: course?.title || "",
-      description: course?.description || "",
-      categoryId: course?.categoryId || undefined,
+      description: course?.description || null,
+      categoryId: course?.categoryId || null,
       price: course?.price || 0,
       isActive: course?.isActive ?? true,
-      thumbnail: course?.thumbnail || "",
-      previewVideoUrl: course?.previewVideoUrl || "",
+      thumbnail: course?.thumbnail || null,
+      previewVideoUrl: course?.previewVideoUrl || null,
     },
   });
 
@@ -93,6 +93,8 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
       }
     });
   }
+
+  const categories = categoriesData?.data || [];
 
   return (
     <Form {...form}>
@@ -124,6 +126,7 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
                 <Textarea
                   placeholder="Describe el contenido del curso..."
                   {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
@@ -137,7 +140,11 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value || undefined}
+                disabled={categories.length === 0}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
