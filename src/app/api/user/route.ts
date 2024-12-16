@@ -8,7 +8,6 @@ import { verifyToken } from "@/lib/verify-token";
 export const GET = buildEndpoint(
   verifyToken(async (req, userId) => {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    console.log({ user });
     return NextResponse.json({ user });
   }),
   {

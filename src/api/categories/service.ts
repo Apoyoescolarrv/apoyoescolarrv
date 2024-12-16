@@ -1,31 +1,51 @@
 import { http } from "@/lib/http";
-import { CategoriesResponse, CategoryResponse } from "@/types/category";
+import { Category } from "@/types/category";
+import { Filter } from "@/types/filters";
 
-export const CategoriesService = {
-  getCategories: async (page = 1, limit = 10, search?: string) => {
-    const { data } = await http.get<CategoriesResponse>(
-      `/categories?page=${page}&limit=${limit}${
-        search ? `&search=${search}` : ""
-      }`
+import { categories } from "@/db/schema";
+import { PaginatedResponse } from "@/types/pagination";
+
+export class CategoriesService {
+  static async getCategories(
+    page: number,
+    limit: number,
+    search: string,
+    filters: Filter<(typeof categories._)["columns"]>[] = []
+  ): Promise<PaginatedResponse<Category>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    if (filters.length > 0) {
+      params.append("filters", JSON.stringify(filters));
+    }
+
+    const { data } = await http.get<PaginatedResponse<Category>>(
+      `/categories?${params}`
     );
     return data;
-  },
+  }
 
-  createCategory: async ({
+  static async createCategory({
     name,
     parentId,
   }: {
     name: string;
     parentId: string | null;
-  }) => {
-    const { data } = await http.post<CategoryResponse>("/categories", {
+  }) {
+    const { data } = await http.post<{ category: Category }>("/categories", {
       name,
       parentId,
     });
     return data.category;
-  },
+  }
 
-  updateCategory: async ({
+  static async updateCategory({
     id,
     name,
     parentId,
@@ -33,19 +53,19 @@ export const CategoriesService = {
     id: string;
     name: string;
     parentId: string | null;
-  }) => {
-    const { data } = await http.put<CategoryResponse>(`/categories`, {
+  }) {
+    const { data } = await http.put<{ category: Category }>(`/categories`, {
       id,
       name,
       parentId,
     });
     return data.category;
-  },
+  }
 
-  deleteCategory: async (id: string) => {
-    const { data } = await http.delete<CategoryResponse>(
+  static async deleteCategory(id: string) {
+    const { data } = await http.delete<{ category: Category }>(
       `/categories?id=${id}`
     );
     return data.category;
-  },
-};
+  }
+}

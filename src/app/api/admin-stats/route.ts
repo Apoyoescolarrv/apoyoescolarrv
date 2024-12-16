@@ -1,5 +1,5 @@
 import { db } from "@/db/drizzle";
-import { categories, courses, users } from "@/db/schema";
+import { categories, courses, users, classes } from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { count } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -16,21 +16,22 @@ export const GET = buildEndpoint(
     }
 
     // Obtener estadísticas y datos
-    const [[categoriesCount], [coursesCount], [usersCount]] = await Promise.all(
-      [
+    const [[categoriesCount], [coursesCount], [usersCount], [classesCount]] =
+      await Promise.all([
         db.select({ count: count() }).from(categories),
         db.select({ count: count() }).from(courses),
         db.select({ count: count() }).from(users),
+        db.select({ count: count() }).from(classes),
         db.select().from(categories).orderBy(categories.createdAt),
         db.select().from(courses).orderBy(courses.createdAt),
-      ]
-    );
+      ]);
 
     const data: AdminData = {
       stats: {
         categories: categoriesCount.count,
         courses: coursesCount.count,
         users: usersCount.count,
+        classes: classesCount.count,
       },
     };
 

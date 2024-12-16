@@ -74,6 +74,18 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [localSearch, setLocalSearch] = useState("");
+
+  const shouldUseLocalSearch = !manualPagination || pageCount <= 1;
+
+  const handleSearch = (value: string) => {
+    setLocalSearch(value);
+    if (!shouldUseLocalSearch) {
+      onSearch?.(value);
+    } else if (searchableColumn) {
+      table.getColumn(searchableColumn)?.setFilterValue(value);
+    }
+  };
 
   const columns = useMemo(() => {
     let cols = initialColumns;
@@ -198,20 +210,8 @@ export function DataTable<TData, TValue>({
         <div className="flex items-end gap-2 justify-between py-4">
           <Input
             placeholder={searchPlaceholder}
-            value={
-              searchValue ??
-              (table.getColumn(searchableColumn)?.getFilterValue() as string) ??
-              ""
-            }
-            onChange={(event) => {
-              if (onSearch) {
-                onSearch(event.target.value);
-              } else {
-                table
-                  .getColumn(searchableColumn)
-                  ?.setFilterValue(event.target.value);
-              }
-            }}
+            value={shouldUseLocalSearch ? localSearch : searchValue ?? ""}
+            onChange={(event) => handleSearch(event.target.value)}
             className="max-w-sm"
             disabled={isLoading}
             clearable

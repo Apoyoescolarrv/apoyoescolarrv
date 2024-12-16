@@ -7,7 +7,12 @@ export interface AdminStats {
 }
 
 export interface AdminData {
-  stats: AdminStats;
+  stats: {
+    categories: number;
+    courses: number;
+    users: number;
+    classes: number;
+  };
 }
 
 // Para uso en el cliente

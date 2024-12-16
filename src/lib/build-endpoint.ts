@@ -1,22 +1,7 @@
+import { PaginationParams } from "@/types/pagination";
 import { SQL, ilike, sql } from "drizzle-orm";
 import { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import { NextRequest, NextResponse } from "next/server";
-
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  offset: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPages: number;
-    limit: number;
-  };
-}
 
 export interface SearchConfig {
   searchField: string;

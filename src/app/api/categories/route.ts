@@ -1,57 +1,77 @@
 import { db } from "@/db/drizzle";
 import { categories } from "@/db/schema";
-import {
-  buildEndpoint,
-  getPaginationParams,
-  getSearchQuery,
-  PaginatedResponse,
-} from "@/lib/build-endpoint";
+import { buildEndpoint } from "@/lib/build-endpoint";
+import { buildWhereClause } from "@/lib/build-filters";
+import { parseFilters } from "@/lib/filters";
 import { verifyToken } from "@/lib/verify-token";
-import { count, eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { asc, count, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
-  async (req: NextRequest) => {
+  verifyToken(async (req, userId, isAdmin) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para ver las categorías" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const { page, limit, offset } = getPaginationParams(searchParams);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const filters =
+      parseFilters<(typeof categories._)["columns"]>(searchParams);
 
-    const searchQuery = getSearchQuery(searchParams, categories, {
-      searchField: "name",
-      transliterateSearch: true,
-    });
+    const offset = (page - 1) * limit;
 
-    const baseQuery = db.select().from(categories);
-    const query = searchQuery ? baseQuery.where(searchQuery) : baseQuery;
+    if (search) {
+      filters.push({
+        field: "name",
+        operator: "like",
+        value: search,
+      });
+    }
 
-    const [totalCount] = await db
-      .select({ count: count() })
-      .from(query.as("filtered_categories"));
+    const whereClause = buildWhereClause(categories, filters);
+    const parentCategories = alias(categories, "parent_categories");
 
-    const categoriesList = await query
-      .limit(limit)
-      .offset(offset)
-      .orderBy(categories.createdAt);
+    const [categoriesList, total] = await Promise.all([
+      db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          parentId: categories.parentId,
+          createdAt: categories.createdAt,
+          parentName: parentCategories.name,
+        })
+        .from(categories)
+        .leftJoin(
+          parentCategories,
+          eq(categories.parentId, parentCategories.id)
+        )
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(asc(categories.createdAt)),
+      db
+        .select({ count: count() })
+        .from(categories)
+        .where(whereClause)
+        .then((res) => Number(res[0].count)),
+    ]);
 
-    const response: PaginatedResponse<typeof categories.$inferSelect> = {
+    return NextResponse.json({
       data: categoriesList,
       pagination: {
-        total: totalCount.count,
+        total,
+        totalPages: Math.ceil(total / limit),
         currentPage: page,
-        totalPages: Math.ceil(totalCount.count / limit),
-        limit,
       },
-    };
-
-    return NextResponse.json(response);
-  },
-  {
-    errorMessage: "Error al obtener las categorías",
-    pagination: true,
-    search: {
-      searchField: "name",
-      transliterateSearch: true,
-    },
-  }
+    });
+  }),
+  { errorMessage: "Error al obtener las categorías" }
 );
 
 export const POST = buildEndpoint(
