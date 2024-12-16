@@ -131,7 +131,7 @@ export function CoursesTable() {
           <Button
             size="sm"
             disabled={isLoading}
-            onClick={() => router.push("/courses/new")}
+            onClick={() => router.push("/admin/courses/new")}
           >
             <Plus className="h-4 w-4" />
             Nuevo Curso

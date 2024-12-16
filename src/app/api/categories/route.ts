@@ -9,14 +9,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
-  verifyToken(async (req, userId, isAdmin) => {
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "No tienes permisos para ver las categorías" },
-        { status: 403 }
-      );
-    }
-
+  async (req) => {
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 10;
@@ -70,7 +63,7 @@ export const GET = buildEndpoint(
         currentPage: page,
       },
     });
-  }),
+  },
   { errorMessage: "Error al obtener las categorías" }
 );
 

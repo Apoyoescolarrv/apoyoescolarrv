@@ -31,7 +31,7 @@ import { catchAxiosError } from "@/lib/catch-axios-error";
 import { Category } from "@/types/category";
 import { Filter } from "@/types/filters";
 import { ColumnDef } from "@tanstack/react-table";
-import { Filter as FilterIcon, Plus } from "lucide-react";
+import { ListFilter as FilterIcon, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface CategoriesTableProps {
