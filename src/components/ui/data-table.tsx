@@ -28,6 +28,7 @@ import { Input } from "./input";
 import { Checkbox } from "./checkbox";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "./skeleton";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,6 +46,10 @@ interface DataTableProps<TData, TValue> {
   onPageChange?: (page: number) => void;
   onSearch?: (value: string) => void;
   searchValue?: string;
+  actions?: {
+    onEdit?: (row: TData) => void;
+    onDelete?: (row: TData) => void;
+  };
 }
 
 export function DataTable<TData, TValue>({
@@ -63,6 +68,7 @@ export function DataTable<TData, TValue>({
   onPageChange,
   onSearch,
   searchValue,
+  actions,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -70,36 +76,72 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const columns = useMemo(() => {
-    return selectable
-      ? [
-          {
-            id: "select",
-            header: ({ table }) => (
-              <Checkbox
-                checked={
-                  table.getIsAllPageRowsSelected() ||
-                  (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) =>
-                  table.toggleAllPageRowsSelected(!!value)
-                }
-                aria-label="Select all"
-              />
-            ),
-            cell: ({ row }) => (
-              <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-              />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-          },
-          ...initialColumns,
-        ]
-      : initialColumns;
-  }, [initialColumns, selectable]);
+    let cols = initialColumns;
+
+    if (selectable) {
+      cols = [
+        {
+          id: "select",
+          header: ({ table }) => (
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all"
+            />
+          ),
+          cell: ({ row }) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        },
+        ...cols,
+      ];
+    }
+
+    if (actions?.onEdit || actions?.onDelete) {
+      cols = [
+        ...cols,
+        {
+          id: "actions",
+          header: () => <div className="text-center">Acciones</div>,
+          cell: ({ row }) => (
+            <div className="flex justify-center text-center gap-2">
+              {actions.onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => actions.onEdit?.(row.original)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              {actions.onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => actions.onDelete?.(row.original)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ),
+        },
+      ];
+    }
+
+    return cols;
+  }, [initialColumns, selectable, actions]);
 
   const table = useReactTable({
     data,
@@ -172,6 +214,7 @@ export function DataTable<TData, TValue>({
             }}
             className="max-w-sm"
             disabled={isLoading}
+            clearable
           />
           {topBar}
         </div>

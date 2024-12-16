@@ -8,7 +8,7 @@ import { Suspense } from "react";
 
 async function CategoryList() {
   const {
-    data: { categories },
+    data: { data: categories },
   } = await http.get("/categories");
 
   const parentCategories = categories.filter(
@@ -68,7 +68,7 @@ function CategorySkeleton() {
 
 export default async function Categories() {
   const {
-    data: { categories },
+    data: { data: categories },
   } = await http.get("/categories");
 
   if (categories.length === 0) {

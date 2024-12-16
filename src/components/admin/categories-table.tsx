@@ -1,8 +1,9 @@
 "use client";
 
+import { useDeleteCategoryMutation } from "@/api/categories/mutations";
+import { useCategoriesQuery } from "@/api/categories/query";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { Category } from "@/types/category";
+import { DataTable } from "@/components/ui/data-table";
 import {
   Dialog,
   DialogContent,
@@ -11,18 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CategoryForm } from "./category-form";
-import { useMemo, useState } from "react";
-import { DataTable } from "@/components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
-import { useCategoriesQuery } from "@/api/categories/query";
-import { useToast } from "@/hooks/use-toast";
-import { ConfirmDialog } from "../ui/confirm-dialog";
-import { catchAxiosError } from "@/lib/catch-axios-error";
-import { useDeleteCategoryMutation } from "@/api/categories/mutations";
-import { Badge } from "../ui/badge";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useToast } from "@/hooks/use-toast";
+import { catchAxiosError } from "@/lib/catch-axios-error";
+import { Category } from "@/types/category";
+import { ColumnDef } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Badge } from "../ui/badge";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { CategoryForm } from "./category-form";
 
 interface CategoriesTableProps {
   onCategoryCreated?: () => void;
@@ -97,31 +96,6 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         cell: ({ row }) =>
           new Date(row.getValue("createdAt")).toLocaleDateString(),
       },
-      {
-        id: "actions",
-        header: () => <div className="text-center">Acciones</div>,
-        cell: ({ row }) => (
-          <div className="flex justify-center text-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setEditingCategory(row.original);
-                setOpen(true);
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeletingCategory(row.original)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     [data?.data]
   );
@@ -180,6 +154,13 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         pageSize={10}
         onSearch={handleSearch}
         searchValue={search}
+        actions={{
+          onEdit: (category) => {
+            setEditingCategory(category);
+            setOpen(true);
+          },
+          onDelete: setDeletingCategory,
+        }}
       />
       <ConfirmDialog
         open={!!deletingCategory}
