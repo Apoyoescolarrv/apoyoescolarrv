@@ -87,113 +87,150 @@ export function ClassForm({ onSuccess, class: editingClass }: ClassFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Título de la Clase</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: Algebra Lineal" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Título de la Clase</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Algebra Lineal" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción (Opcional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe el contenido de la clase..."
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción (Opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe el contenido de la clase..."
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="videoUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Video</FormLabel>
-              <FormControl>
-                <VideoUpload
-                  value={field.value}
-                  onChange={(url) => {
-                    field.onChange(url);
-                    if (!url) {
-                      form.setValue("duration", null);
-                    }
-                  }}
-                  onDurationChange={(duration) => {
-                    form.setValue("duration", duration, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }}
-                  disabled={pending}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <div className="md:hidden">
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Video</FormLabel>
+                    <FormControl>
+                      <VideoUpload
+                        value={field.value}
+                        onChange={(url) => {
+                          field.onChange(url);
+                          if (!url) {
+                            form.setValue("duration", null);
+                          }
+                        }}
+                        onDurationChange={(duration) => {
+                          form.setValue("duration", duration, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }}
+                        disabled={pending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="duration"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Duración</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="00:00:00"
-                  disabled
-                  readOnly
-                  {...field}
-                  value={field.value ? formatDuration(field.value) : ""}
-                  onChange={(e) => {
-                    const seconds = parseDuration(e.target.value);
-                    field.onChange(seconds);
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Duración</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="00:00:00"
+                      disabled
+                      readOnly
+                      {...field}
+                      value={field.value ? formatDuration(field.value) : ""}
+                      onChange={(e) => {
+                        const seconds = parseDuration(e.target.value);
+                        field.onChange(seconds);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="isPreview"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Vista Previa</FormLabel>
-                <FormMessage />
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="isPreview"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Vista Previa</FormLabel>
+                    <FormMessage />
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <Button type="submit" isLoading={pending} disabled={pending}>
-          {editingClass ? "Actualizar" : "Crear"} Clase
-        </Button>
+            <Button type="submit" isLoading={pending} disabled={pending}>
+              {editingClass ? "Actualizar" : "Crear"} Clase
+            </Button>
+          </div>
+
+          <div className="hidden md:block">
+            <FormField
+              control={form.control}
+              name="videoUrl"
+              render={({ field }) => (
+                <FormItem className="h-full">
+                  <FormLabel>Video</FormLabel>
+                  <FormControl>
+                    <VideoUpload
+                      value={field.value}
+                      onChange={(url) => {
+                        field.onChange(url);
+                        if (!url) {
+                          form.setValue("duration", null);
+                        }
+                      }}
+                      onDurationChange={(duration) => {
+                        form.setValue("duration", duration, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      }}
+                      disabled={pending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
       </form>
     </Form>
   );

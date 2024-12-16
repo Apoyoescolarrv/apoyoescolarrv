@@ -120,7 +120,7 @@ export function ClassesTable({ onClassCreated }: ClassesTableProps) {
                 Nueva Clase
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-5xl">
               <DialogHeader>
                 <DialogTitle>
                   {editingClass ? "Editar" : "Crear"} Clase
@@ -130,6 +130,7 @@ export function ClassesTable({ onClassCreated }: ClassesTableProps) {
                   {editingClass ? "editar la" : "crear una nueva"} clase.
                 </DialogDescription>
               </DialogHeader>
+
               <ClassForm
                 class={editingClass}
                 onSuccess={() => {
