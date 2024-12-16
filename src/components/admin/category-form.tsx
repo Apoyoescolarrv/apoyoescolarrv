@@ -44,7 +44,7 @@ interface CategoryFormProps {
 export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const { data: categories = [] } = useCategoriesQuery();
+  const { data } = useCategoriesQuery();
   const { mutateAsync: createCategory } = useCreateCategoryMutation();
   const { mutateAsync: updateCategory } = useUpdateCategoryMutation();
 
@@ -80,6 +80,11 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
     });
   }
 
+  const categories = data?.categories || [];
+  const availableParentCategories = categories.filter(
+    (c) => c.id !== category?.id
+  );
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -104,7 +109,7 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
               <FormLabel>Categoría Padre (Opcional)</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                disabled={categories.length === 0}
+                disabled={availableParentCategories.length === 0}
                 defaultValue={field.value}
               >
                 <FormControl>
@@ -113,7 +118,7 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {availableParentCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>

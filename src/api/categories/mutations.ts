@@ -6,8 +6,11 @@ export const useCreateCategoryMutation = () => {
 
   return useMutation({
     mutationFn: CategoriesService.createCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["categories"],
+        exact: false,
+      });
     },
   });
 };
@@ -17,8 +20,11 @@ export const useUpdateCategoryMutation = () => {
 
   return useMutation({
     mutationFn: CategoriesService.updateCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["categories"],
+        exact: false,
+      });
     },
   });
 };
@@ -28,8 +34,11 @@ export const useDeleteCategoryMutation = () => {
 
   return useMutation({
     mutationFn: CategoriesService.deleteCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["categories"],
+        exact: false,
+      });
     },
   });
 };

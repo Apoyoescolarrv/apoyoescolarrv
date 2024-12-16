@@ -21,12 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { useDeleteCategoryMutation } from "@/api/categories/mutations";
+import { Badge } from "../ui/badge";
 
 interface CategoriesTableProps {
   onCategoryCreated?: () => void;
 }
 
 export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
     Category | undefined
@@ -34,10 +36,14 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
   const [deletingCategory, setDeletingCategory] = useState<
     Category | undefined
   >();
-  const { data: categories = [] } = useCategoriesQuery();
+  const { data, isLoading } = useCategoriesQuery(page);
   const { mutateAsync: deleteCategory, isPending: isDeleting } =
     useDeleteCategoryMutation();
   const { toast } = useToast();
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   const handleDelete = async () => {
     if (!deletingCategory) return;
@@ -64,7 +70,15 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
       {
         accessorKey: "parentId",
         header: "Categoría Padre",
-        cell: ({ row }) => row.getValue("parentId") || "-",
+        cell: ({ row }) => {
+          const parentId = row.getValue("parentId");
+          if (!parentId) return "-";
+
+          const parentCategory = data?.categories.find(
+            (category) => category.id === parentId
+          );
+          return <Badge variant="secondary">{parentCategory?.name}</Badge>;
+        },
       },
       {
         accessorKey: "createdAt",
@@ -98,7 +112,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         ),
       },
     ],
-    []
+    [data?.categories]
   );
 
   return (
@@ -113,7 +127,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" disabled={isLoading}>
                 <Plus className="h-4 w-4" />
                 Agregar Categoría
               </Button>
@@ -141,7 +155,13 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         }
         searchableColumn="name"
         columns={columns}
-        data={categories}
+        data={data?.categories || []}
+        isLoading={isLoading}
+        manualPagination
+        pageCount={data?.pagination.totalPages || 0}
+        currentPage={page}
+        onPageChange={handlePageChange}
+        pageSize={10}
       />
       <ConfirmDialog
         open={!!deletingCategory}

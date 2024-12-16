@@ -21,19 +21,26 @@ import { CourseForm } from "./course-form";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
+import { useCategoriesQuery } from "@/api/categories/query";
 
 interface CoursesTableProps {
   onCourseCreated?: () => void;
 }
 
 export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
-  const { data: courses = [] } = useCoursesQuery();
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | undefined>();
   const [deletingCourse, setDeletingCourse] = useState<Course | undefined>();
+  const { data, isLoading } = useCoursesQuery(page);
+  const { data: categoriesData } = useCategoriesQuery();
   const { mutateAsync: deleteCourse, isPending: isDeleting } =
     useDeleteCourseMutation();
   const { toast } = useToast();
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   const handleDelete = async () => {
     if (!deletingCourse) return;
@@ -44,9 +51,10 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         title: "Curso eliminado",
         description: "El curso se ha eliminado correctamente.",
       });
-      setDeletingCourse(undefined);
     } catch (error) {
       catchAxiosError(error);
+    } finally {
+      setDeletingCourse(undefined);
     }
   };
 
@@ -59,7 +67,9 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
       {
         accessorKey: "price",
         header: "Precio",
-        cell: ({ row }) => <div>${row.getValue("price")}</div>,
+        cell: ({ row }) => (
+          <Badge variant="outline">${row.getValue("price")}</Badge>
+        ),
       },
       {
         accessorKey: "isActive",
@@ -73,7 +83,15 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
       {
         accessorKey: "categoryId",
         header: "Categoría",
-        cell: ({ row }) => row.getValue("categoryId") || "-",
+        cell: ({ row }) => {
+          const categoryId = row.getValue("categoryId");
+          if (!categoryId) return "-";
+
+          const category = categoriesData?.categories.find(
+            (cat) => cat.id === categoryId
+          );
+          return <Badge variant="secondary">{category?.name || "-"}</Badge>;
+        },
       },
       {
         accessorKey: "createdAt",
@@ -107,7 +125,7 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         ),
       },
     ],
-    []
+    [categoriesData?.categories]
   );
 
   return (
@@ -122,7 +140,7 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" disabled={isLoading}>
                 <Plus className="mr-2 h-4 w-4" />
                 Agregar Curso
               </Button>
@@ -150,7 +168,13 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         }
         searchableColumn="title"
         columns={columns}
-        data={courses}
+        data={data?.courses || []}
+        isLoading={isLoading}
+        manualPagination
+        pageCount={data?.pagination.totalPages || 0}
+        currentPage={page}
+        onPageChange={handlePageChange}
+        pageSize={10}
       />
       <ConfirmDialog
         open={!!deletingCourse}

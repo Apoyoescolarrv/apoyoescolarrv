@@ -6,7 +6,7 @@ export const CategoriesService = {
     const { data } = await http.get<CategoriesResponse>(
       `/categories?page=${page}&limit=${limit}`
     );
-    return data.categories;
+    return data;
   },
 
   createCategory: async ({

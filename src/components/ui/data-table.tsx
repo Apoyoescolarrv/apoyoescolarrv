@@ -27,6 +27,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Input } from "./input";
 import { Checkbox } from "./checkbox";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Skeleton } from "./skeleton";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -37,6 +38,11 @@ interface DataTableProps<TData, TValue> {
   onRowSelection?: (selectedRows: TData[]) => void;
   pageSize?: number;
   topBar?: React.ReactNode;
+  isLoading?: boolean;
+  manualPagination?: boolean;
+  pageCount?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -48,13 +54,18 @@ export function DataTable<TData, TValue>({
   topBar,
   onRowSelection,
   pageSize = 10,
+  isLoading = false,
+  manualPagination = false,
+  pageCount = 0,
+  currentPage = 1,
+  onPageChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const columns: ColumnDef<TData, TValue>[] = useMemo(() => {
+  const columns = useMemo(() => {
     return selectable
       ? [
           {
@@ -90,27 +101,42 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: manualPagination
+      ? undefined
+      : getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
+    manualPagination,
+    pageCount: manualPagination ? pageCount : undefined,
     state: {
       sorting,
       columnFilters,
       rowSelection,
       columnVisibility,
+      pagination: manualPagination
+        ? {
+            pageIndex: currentPage - 1,
+            pageSize,
+          }
+        : undefined,
     },
-    initialState: {
-      pagination: {
-        pageSize,
-      },
-    },
+    onPaginationChange: manualPagination
+      ? (updater) => {
+          if (typeof updater === "function") {
+            const newState = updater({
+              pageIndex: currentPage - 1,
+              pageSize,
+            });
+            onPageChange?.(newState.pageIndex + 1);
+          }
+        }
+      : undefined,
   });
 
-  // Notificar cambios en la selección
   useEffect(() => {
     if (onRowSelection && selectable) {
       const selectedRows = table
@@ -136,6 +162,7 @@ export function DataTable<TData, TValue>({
                 ?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
+            disabled={isLoading}
           />
           {topBar}
         </div>
@@ -161,7 +188,17 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              Array.from({ length: pageSize }).map((_, index) => (
+                <TableRow key={index}>
+                  {columns.map((_, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -190,7 +227,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {selectable &&
             `${table.getFilteredSelectedRowModel().rows.length} de ${
@@ -198,19 +235,40 @@ export function DataTable<TData, TValue>({
             } fila(s) seleccionada(s).`}
         </div>
         <div className="space-x-2">
+          {manualPagination && pageCount > 0 && (
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage} de {pageCount}
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() =>
+              manualPagination
+                ? onPageChange?.(currentPage - 1)
+                : table.previousPage()
+            }
+            disabled={
+              (manualPagination
+                ? currentPage <= 1
+                : !table.getCanPreviousPage()) || isLoading
+            }
           >
             <ChevronLeft className="size-4" />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() =>
+              manualPagination
+                ? onPageChange?.(currentPage + 1)
+                : table.nextPage()
+            }
+            disabled={
+              (manualPagination
+                ? currentPage >= pageCount
+                : !table.getCanNextPage()) || isLoading
+            }
           >
             <ChevronRight className="size-4" />
           </Button>

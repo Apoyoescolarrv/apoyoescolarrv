@@ -20,7 +20,7 @@ export const CoursesService = {
     const { data } = await http.get<CoursesResponse>(
       `/courses?page=${page}&limit=${limit}`
     );
-    return data.courses;
+    return data;
   },
 
   createCourse: async (courseData: Partial<Course>) => {
