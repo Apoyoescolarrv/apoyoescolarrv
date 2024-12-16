@@ -153,7 +153,7 @@ export function DataTable<TData, TValue>({
   return (
     <div>
       {searchableColumn && (
-        <div className="flex items-end justify-between py-4">
+        <div className="flex items-end gap-2 justify-between py-4">
           <Input
             placeholder={searchPlaceholder}
             value={

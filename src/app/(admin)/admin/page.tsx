@@ -75,7 +75,7 @@ export default async function AdminPage() {
           </TabsContent>
           <TabsContent value="categories" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-0">
                 <CardTitle>
                   <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold tracking-tight">

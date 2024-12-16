@@ -126,6 +126,11 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
     [data?.data]
   );
 
+  const hasChildren = useMemo(() => {
+    if (!deletingCategory) return false;
+    return data?.data.some((cat) => cat.parentId === deletingCategory.id);
+  }, [deletingCategory, data?.data]);
+
   return (
     <div className="space-y-4">
       <DataTable
@@ -138,7 +143,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm" disabled={isLoading}>
+              <Button disabled={isLoading}>
                 <Plus className="h-4 w-4" />
                 Agregar Categoría
               </Button>
@@ -180,7 +185,11 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
         open={!!deletingCategory}
         onOpenChange={(open) => !open && setDeletingCategory(undefined)}
         title="Eliminar categoría"
-        description="¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
+        description={
+          hasChildren
+            ? "Esta categoría tiene subcategorías que se convertirán en categorías principales al eliminarla. ¿Estás seguro de que deseas continuar?"
+            : "¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
+        }
         onConfirm={handleDelete}
         isLoading={isDeleting}
       />

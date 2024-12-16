@@ -16,7 +16,7 @@ export const CategoriesService = {
     parentId,
   }: {
     name: string;
-    parentId?: string;
+    parentId: string | null;
   }) => {
     const { data } = await http.post<CategoryResponse>("/categories", {
       name,
@@ -32,7 +32,7 @@ export const CategoriesService = {
   }: {
     id: string;
     name: string;
-    parentId?: string;
+    parentId: string | null;
   }) => {
     const { data } = await http.put<CategoryResponse>(`/categories`, {
       id,

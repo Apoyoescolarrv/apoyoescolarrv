@@ -33,7 +33,7 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "El nombre debe tener al menos 2 caracteres.",
   }),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable(),
 });
 
 interface CategoryFormProps {
@@ -44,7 +44,7 @@ interface CategoryFormProps {
 export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const { data } = useCategoriesQuery();
+  const { data: categoriesData } = useCategoriesQuery();
   const { mutateAsync: createCategory } = useCreateCategoryMutation();
   const { mutateAsync: updateCategory } = useUpdateCategoryMutation();
 
@@ -52,7 +52,7 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: category?.name || "",
-      parentId: category?.parentId || undefined,
+      parentId: category?.parentId || null,
     },
   });
 
@@ -80,10 +80,21 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
     });
   }
 
-  const categories = data?.categories || [];
-  const availableParentCategories = categories.filter(
-    (c) => c.id !== category?.id
-  );
+  const categories = categoriesData?.data || [];
+
+  const getDescendantIds = (categoryId: string): string[] => {
+    const children = categories.filter((c) => c.parentId === categoryId);
+    return [
+      categoryId,
+      ...children.flatMap((child) => getDescendantIds(child.id)),
+    ];
+  };
+
+  const availableParentCategories = categories.filter((c) => {
+    if (c.id === category?.id) return false;
+    if (category && getDescendantIds(category.id).includes(c.id)) return false;
+    return true;
+  });
 
   return (
     <Form {...form}>
@@ -108,16 +119,19 @@ export function CategoryForm({ onSuccess, category }: CategoryFormProps) {
             <FormItem>
               <FormLabel>Categoría Padre (Opcional)</FormLabel>
               <Select
-                onValueChange={field.onChange}
+                onValueChange={(value) =>
+                  field.onChange(value === "none" ? null : value)
+                }
+                value={field.value || "none"}
                 disabled={availableParentCategories.length === 0}
-                defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría padre" />
+                    <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
                   {availableParentCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}

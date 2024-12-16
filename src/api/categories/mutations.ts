@@ -1,16 +1,25 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CategoriesService } from "./service";
 
+interface UpdateCategoryData {
+  id: string;
+  name: string;
+  parentId: string | null;
+}
+
+interface CreateCategoryData {
+  name: string;
+  parentId: string | null;
+}
+
 export const useCreateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: CategoriesService.createCategory,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["categories"],
-        exact: false,
-      });
+    mutationFn: (data: CreateCategoryData) =>
+      CategoriesService.createCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"], exact: false });
     },
   });
 };
@@ -19,12 +28,10 @@ export const useUpdateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: CategoriesService.updateCategory,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["categories"],
-        exact: false,
-      });
+    mutationFn: (data: UpdateCategoryData) =>
+      CategoriesService.updateCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"], exact: false });
     },
   });
 };
@@ -33,12 +40,9 @@ export const useDeleteCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: CategoriesService.deleteCategory,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["categories"],
-        exact: false,
-      });
+    mutationFn: (id: string) => CategoriesService.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"], exact: false });
     },
   });
 };

@@ -103,6 +103,11 @@ export const DELETE = buildEndpoint(
       );
     }
 
+    await db
+      .update(categories)
+      .set({ parentId: null })
+      .where(eq(categories.parentId, id));
+
     const [deletedCategory] = await db
       .delete(categories)
       .where(eq(categories.id, id))
