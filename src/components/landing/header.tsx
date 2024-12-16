@@ -4,6 +4,7 @@ import { UserNav } from "./user-nav";
 import { cookies } from "next/headers";
 import { jwtDecode } from "jwt-decode";
 import { User } from "@/types/user";
+import Image from "next/image";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -19,10 +20,10 @@ export async function Header() {
   const user = await getUser();
 
   return (
-    <header className="border-b">
+    <header className="border-b bg-primary text-white">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center space-x-2">
-          <span className="text-2xl font-bold">LMS Platform</span>
+        <Link href="/">
+          <Image src="/logo.svg" alt="Logo" width={150} height={32} />
         </Link>
         <nav className="hidden space-x-4 md:flex">
           <Link href="#" className="text-sm font-medium hover:underline">

@@ -15,3 +15,10 @@ export const useCoursesQuery = ({
     queryFn: () => CoursesService.getCourses(page, 10, search),
   });
 };
+
+export const useCourseQuery = (id: string) => {
+  return useQuery({
+    queryKey: ["course", id],
+    queryFn: () => CoursesService.getCourse(id),
+  });
+};

@@ -1,40 +1,27 @@
 "use client";
 
-import { useCoursesQuery } from "@/api/courses/query";
+import { useCategoriesQuery } from "@/api/categories/query";
 import { useDeleteCourseMutation } from "@/api/courses/mutations";
+import { useCoursesQuery } from "@/api/courses/query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Course } from "@/types/courses";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useToast } from "@/hooks/use-toast";
+import { catchAxiosError } from "@/lib/catch-axios-error";
 import { Category } from "@/types/category";
+import { Course } from "@/types/courses";
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { CourseForm } from "./course-form";
-import { ConfirmDialog } from "../ui/confirm-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { catchAxiosError } from "@/lib/catch-axios-error";
-import { useCategoriesQuery } from "@/api/categories/query";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useRouter } from "next/navigation";
 
-interface CoursesTableProps {
-  onCourseCreated?: () => void;
-}
-
-export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
+export function CoursesTable() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
-  const [open, setOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | undefined>();
   const [deletingCourse, setDeletingCourse] = useState<Course | undefined>();
   const { data, isLoading } = useCoursesQuery({
     page,
@@ -119,10 +106,7 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                setEditingCourse(row.original);
-                setOpen(true);
-              }}
+              onClick={() => router.push(`/courses/${row.original.id}/edit`)}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -137,46 +121,21 @@ export function CoursesTable({ onCourseCreated }: CoursesTableProps) {
         ),
       },
     ],
-    [categoriesData?.data]
+    [categoriesData?.data, router]
   );
 
   return (
     <div className="space-y-4">
       <DataTable
         topBar={
-          <Dialog
-            open={open}
-            onOpenChange={(open) => {
-              setOpen(open);
-              if (!open) setEditingCourse(undefined);
-            }}
+          <Button
+            size="sm"
+            disabled={isLoading}
+            onClick={() => router.push("/courses/new")}
           >
-            <DialogTrigger asChild>
-              <Button size="sm" disabled={isLoading}>
-                <Plus className="h-4 w-4" />
-                Agregar Curso
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCourse ? "Editar" : "Crear"} Curso
-                </DialogTitle>
-                <DialogDescription>
-                  Completa el formulario para{" "}
-                  {editingCourse ? "editar el" : "crear un nuevo"} curso.
-                </DialogDescription>
-              </DialogHeader>
-              <CourseForm
-                course={editingCourse}
-                onSuccess={() => {
-                  setOpen(false);
-                  setEditingCourse(undefined);
-                  onCourseCreated?.();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Curso
+          </Button>
         }
         searchableColumn="title"
         columns={columns}

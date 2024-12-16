@@ -2,7 +2,10 @@
 
 import { useDeleteCategoryMutation } from "@/api/categories/mutations";
 import { useCategoriesQuery } from "@/api/categories/query";
+import { CategoryForm } from "@/components/admin/categories/category-form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Dialog,
@@ -19,9 +22,6 @@ import { Category } from "@/types/category";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "../ui/badge";
-import { ConfirmDialog } from "../ui/confirm-dialog";
-import { CategoryForm } from "./category-form";
 
 interface CategoriesTableProps {
   onCategoryCreated?: () => void;

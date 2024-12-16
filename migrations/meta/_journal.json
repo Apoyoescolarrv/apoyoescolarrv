@@ -29,6 +29,20 @@
       "when": 1734120145813,
       "tag": "0003_rapid_bucky",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1734374457889,
+      "tag": "0004_clever_boom_boom",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1734379720623,
+      "tag": "0005_elite_roulette",
+      "breakpoints": true
     }
   ]
 }

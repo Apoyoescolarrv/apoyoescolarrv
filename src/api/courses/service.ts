@@ -9,6 +9,11 @@ export const CoursesService = {
     return data;
   },
 
+  getCourse: async (id: string) => {
+    const { data } = await http.get<CourseResponse>(`/courses/${id}`);
+    return data.course;
+  },
+
   createCourse: async (
     courseData: Omit<Course, "id" | "createdAt" | "updatedAt">
   ) => {

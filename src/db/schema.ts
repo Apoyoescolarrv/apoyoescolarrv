@@ -48,12 +48,25 @@ export const modules = pgTable("modules", {
 
 export const classes = pgTable("classes", {
   id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  videoUrl: text("video_url").notNull(),
+  duration: integer("duration"),
+  isPreview: boolean("is_preview").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const moduleClasses = pgTable("module_classes", {
+  id: uuid("id").primaryKey().defaultRandom(),
   moduleId: uuid("module_id")
     .references(() => modules.id, { onDelete: "cascade" })
     .notNull(),
-  title: text("title").notNull(),
-  content: text("content"),
-  isPreview: boolean("is_preview").default(false),
+  classId: uuid("class_id")
+    .references(() => classes.id, { onDelete: "cascade" })
+    .notNull(),
   order: integer("order"),
 });
 
@@ -92,7 +105,12 @@ export const userProgress = pgTable("user_progress", {
     .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
   completed: boolean("completed").default(false),
-  progressTime: integer("progress_time"),
+  progressTime: integer("progress_time").default(0),
+  lastWatchedAt: timestamp("last_watched_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const sharedClasses = pgTable("shared_classes", {

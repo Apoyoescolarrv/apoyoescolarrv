@@ -8,6 +8,7 @@ import {
 } from "@/lib/build-endpoint";
 import { count, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/verify-token";
 
 export const GET = buildEndpoint(
   async (req: NextRequest) => {
@@ -53,18 +54,31 @@ export const GET = buildEndpoint(
   }
 );
 
-export const POST = buildEndpoint(
-  async (req: NextRequest) => {
-    const data = await req.json();
-    const [newCourse] = await db.insert(courses).values(data).returning();
+export const POST = verifyToken(
+  async (req: NextRequest, userId: string, isAdmin: boolean) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para crear cursos" },
+        { status: 403 }
+      );
+    }
+
+    const courseData = await req.json();
+    const [newCourse] = await db.insert(courses).values(courseData).returning();
     return NextResponse.json({ course: newCourse });
-  },
-  { errorMessage: "Error al crear el curso" }
+  }
 );
 
-export const PUT = buildEndpoint(
-  async (req: NextRequest) => {
-    const { id, ...data } = await req.json();
+export const PUT = verifyToken(
+  async (req: NextRequest, userId: string, isAdmin: boolean) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para actualizar cursos" },
+        { status: 403 }
+      );
+    }
+
+    const { id, ...courseData } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -75,7 +89,7 @@ export const PUT = buildEndpoint(
 
     const [updatedCourse] = await db
       .update(courses)
-      .set(data)
+      .set(courseData)
       .where(eq(courses.id, id))
       .returning();
 
@@ -87,12 +101,18 @@ export const PUT = buildEndpoint(
     }
 
     return NextResponse.json({ course: updatedCourse });
-  },
-  { errorMessage: "Error al actualizar el curso" }
+  }
 );
 
-export const DELETE = buildEndpoint(
-  async (req: NextRequest) => {
+export const DELETE = verifyToken(
+  async (req: NextRequest, userId: string, isAdmin: boolean) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para eliminar cursos" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -116,6 +136,5 @@ export const DELETE = buildEndpoint(
     }
 
     return NextResponse.json({ course: deletedCourse });
-  },
-  { errorMessage: "Error al eliminar el curso" }
+  }
 );

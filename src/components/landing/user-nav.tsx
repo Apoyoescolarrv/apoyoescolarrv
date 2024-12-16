@@ -16,7 +16,7 @@ export function UserNav({ user }: UserNavProps) {
     <DropdownMenu>
       <DropdownMenuTrigger>
         <Avatar>
-          <AvatarFallback>
+          <AvatarFallback className="bg-white text-black">
             {getUserInitials(user.name || user.email)}
           </AvatarFallback>
         </Avatar>

@@ -6,6 +6,7 @@ import {
   getSearchQuery,
   PaginatedResponse,
 } from "@/lib/build-endpoint";
+import { verifyToken } from "@/lib/verify-token";
 import { count, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -26,7 +27,10 @@ export const GET = buildEndpoint(
       .select({ count: count() })
       .from(query.as("filtered_categories"));
 
-    const categoriesList = await query.limit(limit).offset(offset);
+    const categoriesList = await query
+      .limit(limit)
+      .offset(offset)
+      .orderBy(categories.createdAt);
 
     const response: PaginatedResponse<typeof categories.$inferSelect> = {
       data: categoriesList,
@@ -51,19 +55,33 @@ export const GET = buildEndpoint(
 );
 
 export const POST = buildEndpoint(
-  async (req: NextRequest) => {
+  verifyToken(async (req, userId, isAdmin) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para crear categorías" },
+        { status: 403 }
+      );
+    }
+
     const { name, parentId } = await req.json();
     const [newCategory] = await db
       .insert(categories)
       .values({ name, parentId })
       .returning();
     return NextResponse.json({ category: newCategory });
-  },
+  }),
   { errorMessage: "Error al crear la categoría" }
 );
 
 export const PUT = buildEndpoint(
-  async (req: NextRequest) => {
+  verifyToken(async (req, userId, isAdmin) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para actualizar categorías" },
+        { status: 403 }
+      );
+    }
+
     const { id, name, parentId } = await req.json();
 
     if (!id) {
@@ -87,12 +105,19 @@ export const PUT = buildEndpoint(
     }
 
     return NextResponse.json({ category: updatedCategory });
-  },
+  }),
   { errorMessage: "Error al actualizar la categoría" }
 );
 
 export const DELETE = buildEndpoint(
-  async (req: NextRequest) => {
+  verifyToken(async (req, userId, isAdmin) => {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "No tienes permisos para eliminar categorías" },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -121,6 +146,6 @@ export const DELETE = buildEndpoint(
     }
 
     return NextResponse.json({ category: deletedCategory });
-  },
+  }),
   { errorMessage: "Error al eliminar la categoría" }
 );
