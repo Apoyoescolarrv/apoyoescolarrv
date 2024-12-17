@@ -39,6 +39,7 @@ const moduleSchema = z.object({
       id: z.string().optional(),
       title: z.string().min(1, "El título es requerido"),
       order: z.number(),
+      courseId: z.string().optional(),
     })
   ),
 });
@@ -141,19 +142,7 @@ export function CourseModulesForm({
     resolver: zodResolver(moduleSchema),
     defaultValues: {
       modules:
-        defaultValues.length > 0
-          ? defaultValues.map((module) => ({
-              id: module.id,
-              title: module.title,
-              order: module.order,
-            }))
-          : [
-              {
-                id: "temp-0",
-                title: "",
-                order: 0,
-              },
-            ],
+        defaultValues.length > 0 ? defaultValues : [{ title: "", order: 0 }],
     },
   });
 
@@ -181,13 +170,10 @@ export function CourseModulesForm({
   };
 
   const handleSubmit = (data: ModulesForm) => {
-    console.log("Datos del formulario:", data);
     const modules = data.modules.map((module, index) => ({
       ...module,
-      id: module.id || `temp-${index}`,
       order: index,
     }));
-    console.log("Módulos procesados:", modules);
     onSubmit(modules);
   };
 

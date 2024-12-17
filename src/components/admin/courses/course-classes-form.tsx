@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input";
 
 interface CourseClassesFormProps {
   modules: CourseModule[];
-  onSubmit: (moduleClasses: Record<string, ModuleClass[]>) => void;
+  onSubmit: (classes: Record<string, ModuleClass[]>) => void;
   defaultValues?: Record<string, ModuleClass[]>;
   formRef: React.RefObject<HTMLFormElement | null>;
 }
@@ -164,8 +164,21 @@ export function CourseClassesForm({
   defaultValues = {},
   formRef,
 }: CourseClassesFormProps) {
-  const [moduleClasses, setModuleClasses] =
-    useState<Record<string, ModuleClass[]>>(defaultValues);
+  const [moduleClasses, setModuleClasses] = useState<
+    Record<string, ModuleClass[]>
+  >(() => {
+    return Object.entries(defaultValues).reduce(
+      (acc, [moduleId, classes]) => ({
+        ...acc,
+        [moduleId]: classes.map((c) => ({
+          classId: c.classId,
+          order: c.order,
+          moduleId,
+        })),
+      }),
+      {}
+    );
+  });
   const [activeId, setActiveId] = useState<string | null>(null);
   const { data: classesData, isLoading } = useClassesQuery();
   const [search, setSearch] = useState("");
@@ -219,9 +232,7 @@ export function CourseClassesForm({
     if (overId.startsWith("module-")) {
       const targetModuleId = (over.data.current as { moduleId: string })
         ?.moduleId;
-      if (!targetModuleId) {
-        return;
-      }
+      if (!targetModuleId) return;
 
       const activeClassId = activeId.includes("module-")
         ? activeId.split("-")[2]
@@ -242,9 +253,7 @@ export function CourseClassesForm({
             moduleClasses.some((mc) => mc.classId === activeClassId)
           );
 
-          if (existsInAnyModule) {
-            return prev;
-          }
+          if (existsInAnyModule) return prev;
 
           const newModuleClasses = { ...prev };
           newModuleClasses[targetModuleId] = [
@@ -262,50 +271,73 @@ export function CourseClassesForm({
 
         if (sourceModuleId === targetModuleId) {
           // Reordenar dentro del mismo módulo
-          const sourceClasses = moduleClasses[sourceModuleId] || [];
-          const oldIndex = sourceClasses.findIndex(
-            (mc) => mc.classId === activeClassId
-          );
-          const newIndex = sourceClasses.length - 1;
-
-          if (oldIndex === -1) return;
-
-          const newClasses = [...sourceClasses];
-          const [movedClass] = newClasses.splice(oldIndex, 1);
-          newClasses.splice(newIndex, 0, movedClass);
-
           setModuleClasses((prev) => {
-            const newModuleClasses = { ...prev };
-            newModuleClasses[sourceModuleId] = newClasses.map((mc, index) => ({
-              ...mc,
-              order: index,
-            }));
-            return newModuleClasses;
+            const sourceClasses = prev[sourceModuleId] || [];
+            const activeIndex = sourceClasses.findIndex(
+              (mc) => mc.classId === activeClassId
+            );
+
+            if (activeIndex === -1) return prev;
+
+            const newClasses = [...sourceClasses];
+            const [movedClass] = newClasses.splice(activeIndex, 1);
+
+            // Encontrar el índice de destino basado en la posición del cursor
+            const overIndex = sourceClasses.findIndex(
+              (mc) => `module-${sourceModuleId}-${mc.classId}` === overId
+            );
+
+            // Si no se encuentra el índice de destino, agregar al final
+            const targetIndex =
+              overIndex === -1 ? newClasses.length : overIndex;
+            newClasses.splice(targetIndex, 0, movedClass);
+
+            return {
+              ...prev,
+              [sourceModuleId]: newClasses.map((mc, index) => ({
+                ...mc,
+                order: index,
+              })),
+            };
           });
         } else {
           // Mover entre módulos
-          const sourceClasses = moduleClasses[sourceModuleId] || [];
-          const targetClasses = moduleClasses[targetModuleId] || [];
-          const movedClass = sourceClasses.find(
-            (mc) => mc.classId === activeClassId
-          );
-
-          if (!movedClass) return;
-
           setModuleClasses((prev) => {
-            const newModuleClasses = { ...prev };
-            newModuleClasses[sourceModuleId] = sourceClasses
+            const sourceClasses = prev[sourceModuleId] || [];
+            const targetClasses = prev[targetModuleId] || [];
+            const movedClass = sourceClasses.find(
+              (mc) => mc.classId === activeClassId
+            );
+
+            if (!movedClass) return prev;
+
+            // Encontrar el índice de destino
+            const overIndex = targetClasses.findIndex(
+              (mc) => `module-${targetModuleId}-${mc.classId}` === overId
+            );
+
+            const newSourceClasses = sourceClasses
               .filter((mc) => mc.classId !== activeClassId)
               .map((mc, index) => ({ ...mc, order: index }));
-            newModuleClasses[targetModuleId] = [
-              ...targetClasses,
-              {
-                ...movedClass,
-                moduleId: targetModuleId,
-                order: targetClasses.length,
-              },
-            ];
-            return newModuleClasses;
+
+            const newTargetClasses = [...targetClasses];
+            const targetIndex =
+              overIndex === -1 ? newTargetClasses.length : overIndex;
+
+            newTargetClasses.splice(targetIndex, 0, {
+              ...movedClass,
+              moduleId: targetModuleId,
+              order: targetIndex,
+            });
+
+            return {
+              ...prev,
+              [sourceModuleId]: newSourceClasses,
+              [targetModuleId]: newTargetClasses.map((mc, index) => ({
+                ...mc,
+                order: index,
+              })),
+            };
           });
         }
       }
@@ -331,16 +363,7 @@ export function CourseClassesForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Asegurarnos de que cada módulo tenga un array de clases, aunque esté vacío
-    const completeModuleClasses = modules.reduce((acc, module) => {
-      if (!module.id) return acc;
-      return {
-        ...acc,
-        [module.id]: moduleClasses[module.id] || [],
-      };
-    }, {} as Record<string, ModuleClass[]>);
-
-    onSubmit(completeModuleClasses);
+    onSubmit(moduleClasses);
   };
 
   return (

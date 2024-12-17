@@ -1,18 +1,18 @@
 import { CreateCourseData } from "@/api/courses/service";
 import { db } from "@/db/drizzle";
 import {
+  categories,
+  classes,
   courses,
+  enrollments,
   moduleClasses,
   modules,
-  categories,
-  enrollments,
-  classes,
 } from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { buildWhereClause } from "@/lib/build-filters";
 import { parseFilters } from "@/lib/filters";
 import { verifyToken } from "@/lib/verify-token";
-import { asc, count, eq, inArray, sql } from "drizzle-orm";
+import { asc, count, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
@@ -176,23 +176,14 @@ export const PUT = buildEndpoint(
       .where(eq(courses.id, id))
       .returning();
 
-    await db
-      .delete(moduleClasses)
-      .where(
-        inArray(
-          moduleClasses.moduleId,
-          db
-            .select({ id: modules.id })
-            .from(modules)
-            .where(eq(modules.courseId, id))
-        )
-      );
+    // Eliminar módulos existentes (las clases se eliminarán en cascada)
     await db.delete(modules).where(eq(modules.courseId, id));
 
-    // Crear los nuevos módulos
+    // Crear los nuevos módulos y sus clases
     const createdModules = await Promise.all(
       newModules.map(
         async (moduleData: CreateCourseData["modules"][0], index: number) => {
+          // Crear módulo
           const [createdModule] = await db
             .insert(modules)
             .values({
@@ -202,17 +193,24 @@ export const PUT = buildEndpoint(
             })
             .returning();
 
-          if (moduleData.classes?.length) {
-            await db.insert(moduleClasses).values(
-              moduleData.classes.map((classData, classIndex) => ({
-                moduleId: createdModule.id,
-                classId: classData.classId,
-                order: classData.order ?? classIndex,
-              }))
-            );
-          }
+          // Crear clases del módulo
+          const createdClasses = moduleData.classes?.length
+            ? await db
+                .insert(moduleClasses)
+                .values(
+                  moduleData.classes.map((classData, classIndex) => ({
+                    moduleId: createdModule.id,
+                    classId: classData.classId,
+                    order: classData.order ?? classIndex,
+                  }))
+                )
+                .returning()
+            : [];
 
-          return createdModule;
+          return {
+            ...createdModule,
+            classes: createdClasses,
+          };
         }
       )
     );

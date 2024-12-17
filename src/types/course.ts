@@ -1,34 +1,18 @@
-import { Class } from "./class";
-
-export interface Course {
-  id: string;
+export interface CourseBasics {
   title: string;
-  description: string | null;
+  description: string;
   price: number;
-  categoryId: string | null;
-  category?: {
-    id: string;
-    name: string;
-  };
+  categoryId: string;
   isActive: boolean;
-  whatsappGroupId: string | null;
-  thumbnail: string | null;
-  modules: CourseModule[];
-  createdAt: string;
-  updatedAt: string;
-  _count: {
-    modules: number;
-    students: number;
-  };
-  totalDuration: number | null;
+  whatsappGroupId: string;
+  thumbnail: string;
 }
 
 export interface CourseModule {
   id?: string;
-  courseId?: string;
   title: string;
   order: number;
-  moduleClasses?: ModuleClass[];
+  courseId?: string;
 }
 
 export interface ModuleClass {
@@ -36,21 +20,43 @@ export interface ModuleClass {
   moduleId?: string;
   classId: string;
   order: number;
-  class?: Class;
+}
+
+export interface Course extends CourseBasics {
+  id: string;
+  modules: (CourseModule & {
+    moduleClasses?: ModuleClass[];
+  })[];
+  category?: {
+    id: string;
+    name: string;
+  };
+  totalDuration?: number;
+  _count: {
+    modules: number;
+    students: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CourseFormData {
-  basics: {
-    title: string;
-    description: string;
-    price: number;
-    categoryId: string;
-    isActive: boolean;
-    whatsappGroupId?: string;
-    thumbnail?: string | null;
-  };
+  basics: CourseBasics;
   modules: CourseModule[];
   classes: Record<string, ModuleClass[]>;
+}
+
+export interface CreateCourseModule {
+  title: string;
+  order: number;
+  classes?: {
+    classId: string;
+    order: number;
+  }[];
+}
+
+export interface CreateCourseData extends CourseBasics {
+  modules: CreateCourseModule[];
 }
 
 export interface CourseResponse {

@@ -30,12 +30,12 @@ export const courses = pgTable("courses", {
   price: integer("price").notNull(),
   isActive: boolean("is_active").default(true),
   whatsappGroupId: text("whatsapp_group_id"),
+  thumbnail: text("thumbnail"),
+  previewVideoUrl: text("preview_video_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => new Date()),
-  thumbnail: text("thumbnail"),
-  previewVideoUrl: text("preview_video_url"),
 });
 
 export const modules = pgTable("modules", {
@@ -44,7 +44,8 @@ export const modules = pgTable("modules", {
     .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
-  order: integer("order"),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const classes = pgTable("classes", {
@@ -68,7 +69,8 @@ export const moduleClasses = pgTable("module_classes", {
   classId: uuid("class_id")
     .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
-  order: integer("order"),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const users = pgTable("users", {

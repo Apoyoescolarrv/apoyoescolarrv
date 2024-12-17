@@ -42,7 +42,7 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: "El título debe tener al menos 2 caracteres.",
   }),
-  description: z.string(),
+  description: z.string().default(""),
   price: z.number().min(0, {
     message: "El precio debe ser mayor a 0.",
   }),
@@ -50,8 +50,8 @@ const formSchema = z.object({
     message: "La categoría es requerida.",
   }),
   isActive: z.boolean().default(false),
-  whatsappGroupId: z.string().optional(),
-  thumbnail: z.string().optional().nullable(),
+  whatsappGroupId: z.string().default(""),
+  thumbnail: z.string().default(""),
 });
 
 interface CourseBasicsFormProps {

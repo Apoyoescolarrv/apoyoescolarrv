@@ -97,7 +97,7 @@ export function CoursesList() {
               <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  <span>{formatDuration(course.totalDuration)}</span>
+                  <span>{formatDuration(course.totalDuration ?? 0)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />

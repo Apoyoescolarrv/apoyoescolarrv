@@ -5,17 +5,11 @@ import {
   useCreateCourseMutation,
   useUpdateCourseMutation,
 } from "@/api/courses/mutations";
-import { CreateCourseData } from "@/api/courses/service";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { cn } from "@/lib/utils";
-import {
-  Course,
-  CourseFormData,
-  CourseModule,
-  ModuleClass,
-} from "@/types/course";
+import { Course, CourseFormData, CreateCourseData } from "@/types/course";
 import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -59,41 +53,32 @@ export function CourseCreationStepper({
 }: CourseCreationStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [courseData, setCourseData] = useState<Partial<CourseFormData>>(() => {
-    if (defaultValues) {
-      return {
-        basics: {
-          title: defaultValues.title,
-          description: defaultValues.description || "",
-          price: defaultValues.price,
-          categoryId: defaultValues.categoryId || "",
-          isActive: defaultValues.isActive || false,
-          whatsappGroupId: defaultValues.whatsappGroupId || "",
-          thumbnail: defaultValues.thumbnail || "",
-        },
-        modules: defaultValues.modules.map((module) => ({
-          id: module.id,
-          title: module.title,
-          order: module.order,
-          courseId: module.courseId,
-        })),
-        classes: defaultValues.modules.reduce(
-          (acc: Record<string, ModuleClass[]>, module: CourseModule) => {
-            if (!module.id) return acc;
-            return {
-              ...acc,
-              [module.id]: (module.moduleClasses || []).map((mc) => ({
-                id: mc.id,
-                moduleId: mc.moduleId,
-                classId: mc.classId,
-                order: mc.order,
-              })),
-            };
-          },
-          {}
-        ),
-      };
-    }
-    return {};
+    if (!defaultValues) return {};
+
+    return {
+      basics: {
+        title: defaultValues.title,
+        description: defaultValues.description || "",
+        price: defaultValues.price,
+        categoryId: defaultValues.categoryId || "",
+        isActive: defaultValues.isActive,
+        whatsappGroupId: defaultValues.whatsappGroupId || "",
+        thumbnail: defaultValues.thumbnail || "",
+      },
+      modules: defaultValues.modules.map((module) => ({
+        id: module.id,
+        title: module.title,
+        order: module.order,
+        courseId: module.courseId,
+      })),
+      classes: defaultValues.modules.reduce(
+        (acc, { id, moduleClasses = [] }) => ({
+          ...acc,
+          [id!]: moduleClasses,
+        }),
+        {}
+      ),
+    };
   });
 
   const router = useRouter();
@@ -102,22 +87,17 @@ export function CourseCreationStepper({
   const createCourseMutation = useCreateCourseMutation();
   const updateCourseMutation = useUpdateCourseMutation();
 
-  const basicsFormRef = useRef<HTMLFormElement>(null);
-  const modulesFormRef = useRef<HTMLFormElement>(null);
-  const classesFormRef = useRef<HTMLFormElement>(null);
-
-  const handleBasicsSubmit = (data: CourseFormData["basics"]) => {
-    setCourseData((prev) => ({ ...prev, basics: data }));
-    setCurrentStep((prev) => prev + 1);
+  const formRefs = {
+    basics: useRef<HTMLFormElement>(null),
+    modules: useRef<HTMLFormElement>(null),
+    classes: useRef<HTMLFormElement>(null),
   };
 
-  const handleModulesSubmit = (modules: CourseModule[]) => {
-    setCourseData((prev) => ({ ...prev, modules }));
-    setCurrentStep((prev) => prev + 1);
-  };
-
-  const handleClassesSubmit = (classes: Record<string, ModuleClass[]>) => {
-    setCourseData((prev) => ({ ...prev, classes }));
+  const handleSubmit = (
+    step: keyof CourseFormData,
+    data: CourseFormData[typeof step]
+  ) => {
+    setCourseData((prev) => ({ ...prev, [step]: data }));
     setCurrentStep((prev) => prev + 1);
   };
 
@@ -132,40 +112,30 @@ export function CourseCreationStepper({
     }
 
     try {
-      const { thumbnail = null, ...basics } = courseData.basics;
+      const { basics, modules, classes } = courseData;
+      const courseModules = modules.map((module) => ({
+        title: module.title,
+        order: module.order,
+        classes: module.id
+          ? (classes[module.id] || []).map(({ classId, order }) => ({
+              classId,
+              order,
+            }))
+          : [],
+      }));
+
+      const coursePayload: CreateCourseData = {
+        ...basics,
+        modules: courseModules,
+      };
 
       if (isEditing && courseId) {
         await updateCourseMutation.mutateAsync({
           id: courseId,
-          ...basics,
-          thumbnail,
-          modules: courseData.modules.map((module) => ({
-            title: module.title,
-            order: module.order,
-            moduleClasses: (courseData.classes![module.id!] || []).map(
-              (moduleClass) => ({
-                classId: moduleClass.classId,
-                order: moduleClass.order,
-              })
-            ),
-          })),
+          ...coursePayload,
         });
       } else {
-        const createData: CreateCourseData = {
-          ...basics,
-          thumbnail,
-          modules: courseData.modules.map((module) => ({
-            title: module.title,
-            order: module.order,
-            classes: (courseData.classes![module.id!] || []).map(
-              (moduleClass) => ({
-                classId: moduleClass.classId,
-                order: moduleClass.order,
-              })
-            ),
-          })),
-        };
-        await createCourseMutation.mutateAsync(createData);
+        await createCourseMutation.mutateAsync(coursePayload);
       }
 
       toast({
@@ -179,6 +149,34 @@ export function CourseCreationStepper({
       router.refresh();
     } catch (error) {
       catchAxiosError(error);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep === 0) {
+      const confirmed = window.confirm(
+        "¿Estás seguro de que deseas cancelar la creación del curso?"
+      );
+      if (confirmed) {
+        router.push("/admin");
+      }
+    } else {
+      setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep === steps.length - 1) {
+      handleSaveCourse();
+      return;
+    }
+
+    const currentForm =
+      formRefs[Object.keys(formRefs)[currentStep] as keyof typeof formRefs];
+    if (currentForm?.current) {
+      currentForm.current.requestSubmit();
+    } else {
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
@@ -240,16 +238,16 @@ export function CourseCreationStepper({
       case 0:
         return (
           <CourseBasicsForm
-            formRef={basicsFormRef}
-            onSubmit={handleBasicsSubmit}
+            formRef={formRefs.basics}
+            onSubmit={(data) => handleSubmit("basics", data)}
             defaultValues={courseData.basics}
           />
         );
       case 1:
         return (
           <CourseModulesForm
-            formRef={modulesFormRef}
-            onSubmit={handleModulesSubmit}
+            formRef={formRefs.modules}
+            onSubmit={(data) => handleSubmit("modules", data)}
             defaultValues={courseData.modules}
           />
         );
@@ -259,9 +257,9 @@ export function CourseCreationStepper({
         }
         return (
           <CourseClassesForm
-            formRef={classesFormRef}
+            formRef={formRefs.classes}
             modules={courseData.modules}
-            onSubmit={handleClassesSubmit}
+            onSubmit={(data) => handleSubmit("classes", data)}
             defaultValues={courseData.classes}
           />
         );
@@ -269,36 +267,6 @@ export function CourseCreationStepper({
         return renderPreview();
       default:
         return null;
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep === 0) {
-      const confirmed = window.confirm(
-        "¿Estás seguro de que deseas cancelar la creación del curso?"
-      );
-      if (confirmed) {
-        router.push("/admin");
-      }
-    } else {
-      setCurrentStep((prev) => prev - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep === steps.length - 1) {
-      handleSaveCourse();
-      return;
-    }
-
-    const currentFormRef = [basicsFormRef, modulesFormRef, classesFormRef][
-      currentStep
-    ];
-
-    if (currentFormRef?.current) {
-      currentFormRef.current.requestSubmit();
-    } else {
-      setCurrentStep((prev) => prev + 1);
     }
   };
 
