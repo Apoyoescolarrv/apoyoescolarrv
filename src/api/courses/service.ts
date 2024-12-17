@@ -1,11 +1,13 @@
+import { courses } from "@/db/schema";
 import { http } from "@/lib/http";
 import {
   Course,
   CourseModule,
-  ModuleClass,
-  CoursesResponse,
   CourseResponse,
+  CoursesResponse,
+  ModuleClass,
 } from "@/types/course";
+import { Filter } from "@/types/filters";
 
 export interface CreateCourseBasicData {
   title: string;
@@ -25,10 +27,26 @@ export interface CreateCourseData extends CreateCourseBasicData {
 }
 
 export const CoursesService = {
-  getCourses: async (page = 1, limit = 10, search?: string) => {
-    const { data } = await http.get<CoursesResponse>(
-      `/courses?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`
-    );
+  getCourses: async (
+    page = 1,
+    limit = 10,
+    search?: string,
+    filters: Filter<(typeof courses._)["columns"]>[] = []
+  ) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    if (filters.length > 0) {
+      params.append("filters", JSON.stringify(filters));
+    }
+
+    const { data } = await http.get<CoursesResponse>(`/courses?${params}`);
     return data;
   },
 

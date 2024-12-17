@@ -15,35 +15,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { categories } from "@/db/schema";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { Category } from "@/types/category";
-import { Filter } from "@/types/filters";
 import { ColumnDef } from "@tanstack/react-table";
-import { ListFilter as FilterIcon, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface CategoriesTableProps {
   onCategoryCreated?: () => void;
 }
 
-type FilterValue = "all" | "parent" | "no-parent";
-
 export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<FilterValue>("all");
+
   const debouncedSearch = useDebounce(search);
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
@@ -53,25 +40,9 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
     Category | undefined
   >();
 
-  const filters = useMemo(() => {
-    const tableFilters: Filter<(typeof categories._)["columns"]>[] = [];
-
-    switch (filter) {
-      case "parent":
-        tableFilters.push({ field: "parentId", operator: "isNotNull" });
-        break;
-      case "no-parent":
-        tableFilters.push({ field: "parentId", operator: "isNull" });
-        break;
-    }
-
-    return tableFilters;
-  }, [filter]);
-
   const { data, isLoading } = useCategoriesQuery({
     page,
     search: debouncedSearch,
-    filters,
   });
 
   const { mutateAsync: deleteCategory, isPending: isDeleting } =
@@ -140,68 +111,39 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
     <div className="space-y-4">
       <DataTable
         topBar={
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <FilterIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={filter}
-                  onValueChange={(value) => setFilter(value as FilterValue)}
-                >
-                  <DropdownMenuRadioItem value="all">
-                    Todas las categorías
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="parent">
-                    Con categoría padre
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="no-parent">
-                    Sin categoría padre
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Dialog
-              open={open}
-              onOpenChange={(open) => {
-                setOpen(open);
-                if (!open) setEditingCategory(undefined);
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button disabled={isLoading}>
-                  <Plus className="h-4 w-4" />
-                  Agregar Categoría
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingCategory ? "Editar" : "Crear"} Categoría
-                  </DialogTitle>
-                  <DialogDescription>
-                    Completa el formulario para{" "}
-                    {editingCategory ? "editar la" : "crear una nueva"}{" "}
-                    categoría.
-                  </DialogDescription>
-                </DialogHeader>
-                <CategoryForm
-                  category={editingCategory}
-                  onSuccess={() => {
-                    setOpen(false);
-                    setEditingCategory(undefined);
-                    onCategoryCreated?.();
-                  }}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
+          <Dialog
+            open={open}
+            onOpenChange={(open) => {
+              setOpen(open);
+              if (!open) setEditingCategory(undefined);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button disabled={isLoading}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Categoría
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCategory ? "Editar" : "Crear"} Categoría
+                </DialogTitle>
+                <DialogDescription>
+                  Completa el formulario para{" "}
+                  {editingCategory ? "editar la" : "crear una nueva"} categoría.
+                </DialogDescription>
+              </DialogHeader>
+              <CategoryForm
+                category={editingCategory}
+                onSuccess={() => {
+                  setOpen(false);
+                  setEditingCategory(undefined);
+                  onCategoryCreated?.();
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         }
         searchableColumn="name"
         columns={columns}

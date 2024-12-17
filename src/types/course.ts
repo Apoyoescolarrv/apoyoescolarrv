@@ -3,16 +3,15 @@ import { Class } from "./class";
 export interface Course {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   price: number;
-  categoryId: string;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  modules: CourseModule[];
-  thumbnail?: string;
-  previewVideoUrl?: string;
+  categoryId?: string;
+  categoryName?: string;
   whatsappGroupId?: string;
+  createdAt: Date;
+  thumbnail?: string;
+  modules: CourseModule[];
 }
 
 export interface CourseModule {

@@ -6,26 +6,59 @@ import { useCoursesQuery } from "@/api/courses/query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, TableFilter } from "@/components/ui/data-table";
+
+import { courses } from "@/db/schema";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { Category } from "@/types/category";
 import { Course } from "@/types/course";
+import { Filter } from "@/types/filters";
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+
+type StatusFilterValue = "all" | "active" | "inactive";
+type CategoryFilterValue = "all" | string;
 
 export function CoursesTable() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [categoryFilter, setCategoryFilter] =
+    useState<CategoryFilterValue>("all");
   const debouncedSearch = useDebounce(search);
   const [deletingCourse, setDeletingCourse] = useState<Course | undefined>();
+
+  const filters = useMemo(() => {
+    const tableFilters: Filter<(typeof courses._)["columns"]>[] = [];
+
+    if (statusFilter !== "all") {
+      tableFilters.push({
+        field: "isActive",
+        operator: "eq",
+        value: statusFilter === "active",
+      });
+    }
+
+    if (categoryFilter !== "all") {
+      tableFilters.push({
+        field: "categoryId",
+        operator: "eq",
+        value: categoryFilter,
+      });
+    }
+
+    return tableFilters;
+  }, [statusFilter, categoryFilter]);
+
   const { data, isLoading } = useCoursesQuery({
     page,
     search: debouncedSearch,
+    filters,
   });
   const { data: categoriesData } = useCategoriesQuery();
   const { mutateAsync: deleteCourse, isPending: isDeleting } =
@@ -93,6 +126,17 @@ export function CoursesTable() {
         },
       },
       {
+        accessorKey: "whatsappGroupId",
+        header: "Grupo de WhatsApp",
+        cell: ({ row }) => (
+          <Badge
+            variant={row.getValue("whatsappGroupId") ? "default" : "secondary"}
+          >
+            {row.getValue("whatsappGroupId") ? "Sí" : "No"}
+          </Badge>
+        ),
+      },
+      {
         accessorKey: "createdAt",
         header: "Fecha de Creación",
         cell: ({ row }) =>
@@ -126,6 +170,57 @@ export function CoursesTable() {
     [categoriesData?.data, router]
   );
 
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== "all") count++;
+    if (categoryFilter !== "all") count++;
+    return count;
+  }, [statusFilter, categoryFilter]);
+
+  const tableFilters = useMemo(
+    () => [
+      {
+        id: "status",
+        label: "Estado del curso",
+        value: statusFilter,
+        type: "buttons",
+        options: [
+          {
+            label: "Todos",
+            value: "all" as StatusFilterValue,
+          },
+          {
+            label: "Activos",
+            value: "active" as StatusFilterValue,
+          },
+          {
+            label: "Inactivos",
+            value: "inactive" as StatusFilterValue,
+          },
+        ],
+        onValueChange: (value: StatusFilterValue) => setStatusFilter(value),
+      },
+      {
+        id: "category",
+        label: "Categoría",
+        value: categoryFilter,
+        type: "select",
+        options: [
+          {
+            label: "Todas",
+            value: "all" as CategoryFilterValue,
+          },
+          ...(categoriesData?.data?.map((category) => ({
+            label: category.name,
+            value: category.id as CategoryFilterValue,
+          })) || []),
+        ],
+        onValueChange: (value: CategoryFilterValue) => setCategoryFilter(value),
+      },
+    ],
+    [statusFilter, categoryFilter, categoriesData?.data]
+  );
+
   return (
     <div className="space-y-4">
       <DataTable
@@ -135,10 +230,14 @@ export function CoursesTable() {
             disabled={isLoading}
             onClick={() => router.push("/admin/courses/new")}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 mr-2" />
             Nuevo Curso
           </Button>
         }
+        filters={
+          tableFilters as TableFilter<StatusFilterValue | CategoryFilterValue>[]
+        }
+        activeFiltersCount={activeFiltersCount}
         searchableColumn="title"
         columns={columns}
         data={data?.data || []}

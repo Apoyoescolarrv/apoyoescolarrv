@@ -26,7 +26,7 @@ export async function Header() {
           <Image src="/logo.svg" alt="Logo" width={150} height={32} />
         </Link>
         <nav className="hidden space-x-4 md:flex">
-          <Link href="#" className="text-sm font-medium hover:underline">
+          <Link href="/courses" className="text-sm font-medium hover:underline">
             Cursos
           </Link>
           <Link href="#" className="text-sm font-medium hover:underline">

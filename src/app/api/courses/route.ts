@@ -1,58 +1,72 @@
-import { db } from "@/db/drizzle";
-import { courses, modules, moduleClasses } from "@/db/schema";
-import {
-  buildEndpoint,
-  getPaginationParams,
-  getSearchQuery,
-} from "@/lib/build-endpoint";
-import { count, eq, inArray } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/verify-token";
 import { CreateCourseData } from "@/api/courses/service";
-import { PaginatedResponse } from "@/types/pagination";
+import { db } from "@/db/drizzle";
+import { courses, moduleClasses, modules, categories } from "@/db/schema";
+import { buildEndpoint } from "@/lib/build-endpoint";
+import { buildWhereClause } from "@/lib/build-filters";
+import { parseFilters } from "@/lib/filters";
+import { verifyToken } from "@/lib/verify-token";
+import { asc, count, eq, inArray } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
   async (req: NextRequest) => {
     const { searchParams } = new URL(req.url);
-    const { page, limit, offset } = getPaginationParams(searchParams);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const filters = parseFilters<(typeof courses._)["columns"]>(searchParams);
 
-    const searchQuery = getSearchQuery(searchParams, courses, {
-      searchField: "title",
-      transliterateSearch: true,
-    });
+    const offset = (page - 1) * limit;
 
-    const baseQuery = db.select().from(courses);
-    const query = searchQuery ? baseQuery.where(searchQuery) : baseQuery;
+    if (search) {
+      filters.push({
+        field: "title",
+        operator: "like",
+        value: search,
+      });
+    }
 
-    const [totalCount] = await db
-      .select({ count: count() })
-      .from(query.as("filtered_courses"));
+    const whereClause = buildWhereClause(courses, filters);
 
-    const coursesList = await query
-      .limit(limit)
-      .offset(offset)
-      .orderBy(courses.createdAt);
+    const [coursesList, total] = await Promise.all([
+      db
+        .select({
+          id: courses.id,
+          title: courses.title,
+          description: courses.description,
+          price: courses.price,
+          isActive: courses.isActive,
+          whatsappGroupId: courses.whatsappGroupId,
+          createdAt: courses.createdAt,
+          categoryId: courses.categoryId,
+          category: {
+            id: categories.id,
+            name: categories.name,
+          },
+        })
+        .from(courses)
+        .leftJoin(categories, eq(courses.categoryId, categories.id))
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(asc(courses.createdAt)),
+      db
+        .select({ count: count() })
+        .from(courses)
+        .where(whereClause)
+        .then((res) => Number(res[0].count)),
+    ]);
 
-    const response: PaginatedResponse<typeof courses.$inferSelect> = {
+    return NextResponse.json({
       data: coursesList,
       pagination: {
-        total: totalCount.count,
+        total,
+        totalPages: Math.ceil(total / limit),
         currentPage: page,
-        totalPages: Math.ceil(totalCount.count / limit),
-        limit,
       },
-    };
-
-    return NextResponse.json(response);
+    });
   },
-  {
-    errorMessage: "Error al obtener los cursos",
-    pagination: true,
-    search: {
-      searchField: "title",
-      transliterateSearch: true,
-    },
-  }
+  { errorMessage: "Error al obtener los cursos" }
 );
 
 export const POST = buildEndpoint(

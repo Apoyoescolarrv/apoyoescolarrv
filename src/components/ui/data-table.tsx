@@ -14,7 +14,21 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -23,14 +37,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ListFilter as FilterIcon,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Input } from "./input";
 import { Checkbox } from "./checkbox";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "./input";
 import { Skeleton } from "./skeleton";
-import { Pencil, Trash2 } from "lucide-react";
 
-interface DataTableProps<TData, TValue> {
+export interface TableFilter<TValue = string> {
+  id: string;
+  label: string;
+  value: TValue;
+  type?: "select" | "buttons";
+  options: {
+    label: string;
+    value: TValue;
+    icon?: React.ReactNode;
+  }[];
+  onValueChange: (value: TValue) => void;
+}
+
+interface DataTableProps<TData, TValue, TFilterValue = string> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   selectable?: boolean;
@@ -50,9 +83,11 @@ interface DataTableProps<TData, TValue> {
     onEdit?: (row: TData) => void;
     onDelete?: (row: TData) => void;
   };
+  filters?: TableFilter<TFilterValue>[];
+  activeFiltersCount?: number;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData, TValue, TFilterValue = string>({
   columns: initialColumns,
   data,
   selectable = true,
@@ -69,7 +104,9 @@ export function DataTable<TData, TValue>({
   onSearch,
   searchValue,
   actions,
-}: DataTableProps<TData, TValue>) {
+  filters,
+  activeFiltersCount = 0,
+}: DataTableProps<TData, TValue, TFilterValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -204,18 +241,103 @@ export function DataTable<TData, TValue>({
     }
   }, [rowSelection, onRowSelection, selectable, table]);
 
+  const renderFilterContent = (filter: TableFilter<TFilterValue>) => {
+    if (filter.type === "select") {
+      return (
+        <Select
+          value={String(filter.value)}
+          onValueChange={(value) => filter.onValueChange(value as TFilterValue)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccionar opción" />
+          </SelectTrigger>
+          <SelectContent>
+            {filter.options.map((option) => (
+              <SelectItem
+                key={`${filter.id}-${String(option.value)}`}
+                value={String(option.value)}
+                className="flex items-center gap-2"
+              >
+                {option.icon}
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {filter.options.map((option) => (
+          <Button
+            key={`${filter.id}-${String(option.value)}`}
+            variant={filter.value === option.value ? "default" : "outline"}
+            size="sm"
+            className="justify-start"
+            onClick={() => filter.onValueChange(option.value)}
+          >
+            {option.icon}
+            {option.label}
+            {filter.value === option.value && (
+              <Check className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderFilters = () => {
+    if (!filters?.length) return null;
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 border-dashed">
+            <FilterIcon className="h-4 w-4" />
+            Filtros
+            {activeFiltersCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="rounded-full size-5 flex items-center justify-center px-1 font-normal"
+              >
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[280px] p-4" align="start">
+          <div className="space-y-4">
+            {filters.map((filter, index) => (
+              <div key={filter.id} className="space-y-2">
+                <div className="font-medium text-sm">{filter.label}</div>
+                <div className="space-y-2">{renderFilterContent(filter)}</div>
+                {index < filters.length - 1 && <Separator className="my-2" />}
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   return (
     <div>
-      {searchableColumn && (
-        <div className="flex items-end gap-2 justify-between py-4">
-          <Input
-            placeholder={searchPlaceholder}
-            value={shouldUseLocalSearch ? localSearch : searchValue ?? ""}
-            onChange={(event) => handleSearch(event.target.value)}
-            className="max-w-sm"
-            disabled={isLoading}
-            clearable
-          />
+      {(searchableColumn || filters?.length) && (
+        <div className="flex items-center gap-4 justify-between py-4">
+          <div className="flex items-center w-full max-w-sm gap-2">
+            {searchableColumn && (
+              <Input
+                placeholder={searchPlaceholder}
+                value={shouldUseLocalSearch ? localSearch : searchValue ?? ""}
+                onChange={(event) => handleSearch(event.target.value)}
+                disabled={isLoading}
+                clearable
+              />
+            )}
+            {renderFilters()}
+          </div>
           {topBar}
         </div>
       )}
