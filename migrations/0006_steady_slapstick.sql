@@ -1,0 +1,1 @@
+ALTER TABLE "courses" ADD COLUMN "whatsapp_group_id" text;

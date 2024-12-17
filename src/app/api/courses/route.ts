@@ -75,6 +75,7 @@ export const POST = buildEndpoint(
         categoryId: data.categoryId,
         price: Number(data.price),
         isActive: data.isActive,
+        whatsappGroupId: data.whatsappGroupId,
       })
       .returning();
 

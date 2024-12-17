@@ -65,6 +65,7 @@ export function CourseCreationStepper({
           price: defaultValues.price,
           categoryId: defaultValues.categoryId || "",
           isActive: defaultValues.isActive || false,
+          whatsappGroupId: defaultValues.whatsappGroupId || "",
         },
         modules: defaultValues.modules.map((module) => ({
           id: module.id,
@@ -98,7 +99,6 @@ export function CourseCreationStepper({
   const createCourseMutation = useCreateCourseMutation();
   const updateCourseMutation = useUpdateCourseMutation();
 
-  // Referencias a los formularios
   const basicsFormRef = useRef<HTMLFormElement>(null);
   const modulesFormRef = useRef<HTMLFormElement>(null);
   const classesFormRef = useRef<HTMLFormElement>(null);
@@ -109,7 +109,6 @@ export function CourseCreationStepper({
   };
 
   const handleModulesSubmit = (modules: CourseModule[]) => {
-    console.log("Módulos guardados:", modules);
     setCourseData((prev) => ({ ...prev, modules }));
     setCurrentStep((prev) => prev + 1);
   };

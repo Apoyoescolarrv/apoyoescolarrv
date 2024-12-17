@@ -15,6 +15,7 @@ export interface CreateCourseBasicData {
   isActive: boolean;
   thumbnail?: string;
   previewVideoUrl?: string;
+  whatsappGroupId?: string;
 }
 
 export interface CreateCourseData extends CreateCourseBasicData {

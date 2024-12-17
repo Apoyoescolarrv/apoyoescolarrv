@@ -43,6 +43,13 @@
       "when": 1734379720623,
       "tag": "0005_elite_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1734443248738,
+      "tag": "0006_steady_slapstick",
+      "breakpoints": true
     }
   ]
 }

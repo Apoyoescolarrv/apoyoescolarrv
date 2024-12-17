@@ -12,6 +12,7 @@ export interface Course {
   modules: CourseModule[];
   thumbnail?: string;
   previewVideoUrl?: string;
+  whatsappGroupId?: string;
 }
 
 export interface CourseModule {
@@ -37,6 +38,7 @@ export interface CourseFormData {
     price: number;
     categoryId: string;
     isActive: boolean;
+    whatsappGroupId?: string;
   };
   modules: CourseModule[];
   classes: Record<string, ModuleClass[]>;

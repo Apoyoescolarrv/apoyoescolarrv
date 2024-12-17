@@ -29,6 +29,7 @@ export const courses = pgTable("courses", {
   }),
   price: integer("price").notNull(),
   isActive: boolean("is_active").default(true),
+  whatsappGroupId: text("whatsapp_group_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

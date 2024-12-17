@@ -49,6 +49,7 @@ const formSchema = z.object({
     message: "La categoría es requerida.",
   }),
   isActive: z.boolean().default(false),
+  whatsappGroupId: z.string().optional(),
 });
 
 interface CourseBasicsFormProps {
@@ -84,6 +85,7 @@ export function CourseBasicsForm({
       price: defaultValues?.price || 0,
       categoryId: defaultValues?.categoryId || "",
       isActive: defaultValues?.isActive || false,
+      whatsappGroupId: defaultValues?.whatsappGroupId || "",
     },
   });
 
@@ -281,6 +283,27 @@ export function CourseBasicsForm({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="whatsappGroupId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ID del Grupo de WhatsApp</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Ej: JtD6iPCiFtNCuGcKkdiMgR"
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormDescription>
+                Ingresa el ID del grupo de WhatsApp (formato: XXXXXXXXX).
+              </FormDescription>
+              <FormMessage />
             </FormItem>
           )}
         />
