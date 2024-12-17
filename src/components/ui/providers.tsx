@@ -7,6 +7,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     defaultOptions: {
       queries: {
         retry: 5,
+        staleTime: 1000 * 60 * 5, // 5 minutos
+        gcTime: 1000 * 60 * 10, // 10 minutos
       },
     },
   });
