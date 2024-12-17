@@ -14,6 +14,7 @@ export const POST = buildEndpoint(
 
     const form = await req.formData();
     const file = form.get("file") as File;
+    const type = form.get("type") as string;
 
     if (!file) {
       return NextResponse.json(
@@ -22,16 +23,24 @@ export const POST = buildEndpoint(
       );
     }
 
-    // Validar que sea un video
-    if (!file.type.startsWith("video/")) {
+    // Validar el tipo de archivo según el parámetro type
+    if (type === "video" && !file.type.startsWith("video/")) {
       return NextResponse.json(
         { error: "El archivo debe ser un video" },
         { status: 400 }
       );
     }
 
-    // Subir a Vercel Blob
-    const blob = await put(`classes/${file.name}`, file, {
+    if (type === "image" && !file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "El archivo debe ser una imagen" },
+        { status: 400 }
+      );
+    }
+
+    // Subir a Vercel Blob con el prefijo correspondiente
+    const prefix = type === "video" ? "classes" : "thumbnails";
+    const blob = await put(`${prefix}/${file.name}`, file, {
       access: "public",
       addRandomSuffix: true,
     });

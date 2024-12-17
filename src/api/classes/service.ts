@@ -1,67 +1,59 @@
 import { http } from "@/lib/http";
-import { Class, ClassResponse } from "@/types/class";
+import {
+  ClassResponse,
+  ClassesResponse,
+  CreateClassDto,
+  UpdateClassDto,
+} from "@/types/class";
 
-interface ClassesResponse {
-  data: Class[];
-  pagination: {
-    total: number;
-    totalPages: number;
-  };
-}
+export class ClassesService {
+  static async getClasses(page = 1, limit = 10, search = "") {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
 
-interface UploadResponse {
-  url: string;
-}
+    if (search) {
+      params.append("search", search);
+    }
 
-export const ClassesService = {
-  getClasses: async (page = 1, limit = 10, search?: string) => {
-    const { data } = await http.get<ClassesResponse>(
-      `/classes?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`
-    );
+    const { data } = await http.get<ClassesResponse>(`/classes?${params}`);
     return data;
-  },
+  }
 
-  getClass: async (id: string) => {
+  static async getClass(id: string) {
     const { data } = await http.get<ClassResponse>(`/classes/${id}`);
     return data.class;
-  },
+  }
 
-  createClass: async (
-    classData: Omit<Class, "id" | "createdAt" | "updatedAt">
-  ) => {
-    const { data } = await http.post<ClassResponse>("/classes", classData);
+  static async createClass(dto: CreateClassDto) {
+    const { data } = await http.post<ClassResponse>("/classes", dto);
     return data.class;
-  },
+  }
 
-  updateClass: async ({
-    id,
-    ...classData
-  }: Partial<Class> & { id: string }) => {
-    const { data } = await http.put<ClassResponse>(`/classes`, {
-      id,
-      ...classData,
-    });
+  static async updateClass({ id, ...dto }: UpdateClassDto) {
+    const { data } = await http.patch<ClassResponse>(`/classes/${id}`, dto);
     return data.class;
-  },
+  }
 
-  deleteClass: async (id: string) => {
-    const { data } = await http.delete<ClassResponse>(`/classes?id=${id}`);
-    return data.class;
-  },
+  static async deleteClass(id: string) {
+    await http.delete(`/classes/${id}`);
+  }
 
-  uploadVideo: async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const { data } = await http.post<UploadResponse>(
+  static async uploadMedia(data: FormData) {
+    const { data: response } = await http.post<{ url: string }>(
       "/classes/upload",
-      formData,
+      data,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       }
     );
-    return data;
-  },
-};
+    return response;
+  }
+
+  static async deleteMedia(url: string) {
+    await http.delete(`/classes/upload?url=${encodeURIComponent(url)}`);
+  }
+}

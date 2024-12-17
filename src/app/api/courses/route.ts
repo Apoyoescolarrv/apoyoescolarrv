@@ -1,11 +1,18 @@
 import { CreateCourseData } from "@/api/courses/service";
 import { db } from "@/db/drizzle";
-import { courses, moduleClasses, modules, categories } from "@/db/schema";
+import {
+  courses,
+  moduleClasses,
+  modules,
+  categories,
+  enrollments,
+  classes,
+} from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { buildWhereClause } from "@/lib/build-filters";
 import { parseFilters } from "@/lib/filters";
 import { verifyToken } from "@/lib/verify-token";
-import { asc, count, eq, inArray } from "drizzle-orm";
+import { asc, count, eq, inArray, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
@@ -37,12 +44,33 @@ export const GET = buildEndpoint(
           price: courses.price,
           isActive: courses.isActive,
           whatsappGroupId: courses.whatsappGroupId,
+          thumbnail: courses.thumbnail,
+          previewVideoUrl: courses.previewVideoUrl,
           createdAt: courses.createdAt,
           categoryId: courses.categoryId,
           category: {
             id: categories.id,
             name: categories.name,
           },
+          _count: {
+            modules: sql`(
+              SELECT COUNT(*)::int
+              FROM ${modules}
+              WHERE ${modules.courseId} = ${courses.id}
+            )`.as("modules_count"),
+            students: sql`(
+              SELECT COUNT(*)::int
+              FROM ${enrollments}
+              WHERE ${enrollments.courseId} = ${courses.id}
+            )`.as("students_count"),
+          },
+          totalDuration: sql`(
+            SELECT COALESCE(SUM(${classes.duration}), 0)::int
+            FROM ${moduleClasses}
+            INNER JOIN ${modules} ON ${modules.id} = ${moduleClasses.moduleId}
+            INNER JOIN ${classes} ON ${classes.id} = ${moduleClasses.classId}
+            WHERE ${modules.courseId} = ${courses.id}
+          )`.as("total_duration"),
         })
         .from(courses)
         .leftJoin(categories, eq(courses.categoryId, categories.id))
@@ -148,7 +176,6 @@ export const PUT = buildEndpoint(
       .where(eq(courses.id, id))
       .returning();
 
-    // Eliminar módulos y clases existentes
     await db
       .delete(moduleClasses)
       .where(
@@ -175,19 +202,13 @@ export const PUT = buildEndpoint(
             })
             .returning();
 
-          // Crear las clases del módulo
-          if (moduleData.moduleClasses?.length) {
+          if (moduleData.classes?.length) {
             await db.insert(moduleClasses).values(
-              moduleData.moduleClasses.map(
-                (
-                  classData: { classId: string; order?: number },
-                  classIndex: number
-                ) => ({
-                  moduleId: createdModule.id,
-                  classId: classData.classId,
-                  order: classData.order ?? classIndex,
-                })
-              )
+              moduleData.classes.map((classData, classIndex) => ({
+                moduleId: createdModule.id,
+                classId: classData.classId,
+                order: classData.order ?? classIndex,
+              }))
             );
           }
 

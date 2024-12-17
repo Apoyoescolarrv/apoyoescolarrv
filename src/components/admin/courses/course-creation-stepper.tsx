@@ -1,25 +1,27 @@
 "use client";
 
+import { useClassesQuery } from "@/api/classes/query";
+import {
+  useCreateCourseMutation,
+  useUpdateCourseMutation,
+} from "@/api/courses/mutations";
+import { CreateCourseData } from "@/api/courses/service";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Check, ChevronRight, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
-import { CourseBasicsForm } from "./course-basics-form";
-import { CourseModulesForm } from "./course-modules-form";
-import { CourseClassesForm } from "./course-classes-form";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { catchAxiosError } from "@/lib/catch-axios-error";
+import { cn } from "@/lib/utils";
 import {
   Course,
   CourseFormData,
   CourseModule,
   ModuleClass,
 } from "@/types/course";
-import { useClassesQuery } from "@/api/classes/query";
-import { useCreateCourseMutation } from "@/api/courses/mutations";
-import { useUpdateCourseMutation } from "@/api/courses/mutations";
-import { catchAxiosError } from "@/lib/catch-axios-error";
-import { CreateCourseData } from "@/api/courses/service";
+import { Check, ChevronRight, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { CourseBasicsForm } from "./course-basics-form";
+import { CourseClassesForm } from "./course-classes-form";
+import { CourseModulesForm } from "./course-modules-form";
 
 const steps = [
   {
@@ -66,6 +68,7 @@ export function CourseCreationStepper({
           categoryId: defaultValues.categoryId || "",
           isActive: defaultValues.isActive || false,
           whatsappGroupId: defaultValues.whatsappGroupId || "",
+          thumbnail: defaultValues.thumbnail || "",
         },
         modules: defaultValues.modules.map((module) => ({
           id: module.id,
@@ -129,10 +132,13 @@ export function CourseCreationStepper({
     }
 
     try {
+      const { thumbnail = null, ...basics } = courseData.basics;
+
       if (isEditing && courseId) {
         await updateCourseMutation.mutateAsync({
           id: courseId,
-          ...courseData.basics,
+          ...basics,
+          thumbnail,
           modules: courseData.modules.map((module) => ({
             title: module.title,
             order: module.order,
@@ -146,7 +152,8 @@ export function CourseCreationStepper({
         });
       } else {
         const createData: CreateCourseData = {
-          ...courseData.basics,
+          ...basics,
+          thumbnail,
           modules: courseData.modules.map((module) => ({
             title: module.title,
             order: module.order,
@@ -203,7 +210,7 @@ export function CourseCreationStepper({
                       <h5 className="font-medium">{module.title}</h5>
                       <div className="mt-2 space-y-2">
                         {moduleClasses.map((moduleClass) => {
-                          const classData = classesData?.data.find(
+                          const classData = classesData?.data?.find(
                             (c) => c.id === moduleClass.classId
                           );
                           if (!classData) return null;
@@ -284,16 +291,13 @@ export function CourseCreationStepper({
       return;
     }
 
-    // Obtener la referencia del formulario actual
     const currentFormRef = [basicsFormRef, modulesFormRef, classesFormRef][
       currentStep
     ];
 
-    // Si hay un formulario, disparar su evento submit
     if (currentFormRef?.current) {
       currentFormRef.current.requestSubmit();
     } else {
-      // Si no hay formulario (como en la vista previa), avanzar directamente
       setCurrentStep((prev) => prev + 1);
     }
   };

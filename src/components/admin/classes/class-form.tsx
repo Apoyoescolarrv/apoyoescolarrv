@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { VideoUpload } from "@/components/ui/video-upload";
+import { MediaUpload } from "@/components/ui/media-upload";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { formatDuration, parseDuration } from "@/lib/utils";
@@ -129,7 +129,8 @@ export function ClassForm({ onSuccess, class: editingClass }: ClassFormProps) {
                   <FormItem>
                     <FormLabel>Video</FormLabel>
                     <FormControl>
-                      <VideoUpload
+                      <MediaUpload
+                        type="video"
                         value={field.value}
                         onChange={(url) => {
                           field.onChange(url);
@@ -208,7 +209,8 @@ export function ClassForm({ onSuccess, class: editingClass }: ClassFormProps) {
                 <FormItem className="h-full">
                   <FormLabel>Video</FormLabel>
                   <FormControl>
-                    <VideoUpload
+                    <MediaUpload
+                      type="video"
                       value={field.value}
                       onChange={(url) => {
                         field.onChange(url);

@@ -3,37 +3,41 @@ import { ClassesService } from "./service";
 
 interface ClassesQueryParams {
   page?: number;
+  limit?: number;
   search?: string;
 }
 
 export const useClassesQuery = ({
   page = 1,
+  limit = 10,
   search = "",
 }: ClassesQueryParams = {}) => {
   return useQuery({
-    queryKey: ["classes", page, search],
-    queryFn: () => ClassesService.getClasses(page, 10, search),
+    queryKey: ["classes", { page, limit, search }],
+    queryFn: () => ClassesService.getClasses(page, limit, search),
   });
 };
 
-export const useClassQuery = (id: string) => {
+export const useClassQuery = (id: string | null) => {
   return useQuery({
     queryKey: ["class", id],
-    queryFn: () => ClassesService.getClass(id),
+    queryFn: () => (id ? ClassesService.getClass(id) : null),
+    enabled: !!id,
   });
 };
 
 export const useInfiniteClassesQuery = ({
+  limit = 10,
   search = "",
-}: ClassesQueryParams = {}) => {
+}: Omit<ClassesQueryParams, "page"> = {}) => {
   return useInfiniteQuery({
-    queryKey: ["infiniteClasses", search],
+    queryKey: ["infiniteClasses", { limit, search }],
     queryFn: ({ pageParam = 1 }) =>
-      ClassesService.getClasses(pageParam, 10, search),
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.totalPages > lastPage.pagination.total / 10
-        ? Math.floor(lastPage.pagination.total / 10) + 1
-        : undefined,
+      ClassesService.getClasses(pageParam, limit, search),
+    getNextPageParam: (lastPage, allPages) => {
+      const nextPage = allPages.length + 1;
+      return nextPage <= lastPage.pagination.totalPages ? nextPage : undefined;
+    },
     initialPageParam: 1,
   });
 };

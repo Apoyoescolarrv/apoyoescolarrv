@@ -33,9 +33,10 @@ import { cn } from "@/lib/utils";
 import { CourseFormData } from "@/types/course";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { MediaUpload } from "@/components/ui/media-upload";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -50,6 +51,7 @@ const formSchema = z.object({
   }),
   isActive: z.boolean().default(false),
   whatsappGroupId: z.string().optional(),
+  thumbnail: z.string().optional().nullable(),
 });
 
 interface CourseBasicsFormProps {
@@ -65,6 +67,7 @@ export function CourseBasicsForm({
 }: CourseBasicsFormProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [pending, startTransition] = useTransition();
   const debouncedSearch = useDebounce(search, 300);
 
   const {
@@ -86,6 +89,7 @@ export function CourseBasicsForm({
       categoryId: defaultValues?.categoryId || "",
       isActive: defaultValues?.isActive || false,
       whatsappGroupId: defaultValues?.whatsappGroupId || "",
+      thumbnail: defaultValues?.thumbnail || "",
     },
   });
 
@@ -107,43 +111,76 @@ export function CourseBasicsForm({
     }
   };
 
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    startTransition(() => {
+      onSubmit(values);
+    });
+  };
+
   return (
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-6"
       >
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Título del Curso</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: Matemáticas Básicas" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Título del Curso</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Matemáticas Básicas" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe el contenido del curso..."
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe el contenido del curso..."
+                      {...field}
+                      value={field.value || ""}
+                      className="min-h-[120px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="thumbnail"
+            render={({ field }) => (
+              <FormItem className="h-full">
+                <FormLabel>Imagen de Portada</FormLabel>
+                <FormControl>
+                  <MediaUpload
+                    type="image"
+                    value={field.value}
+                    onChange={field.onChange}
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={pending}
+                    className="h-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <FormField

@@ -3,15 +3,24 @@ import { Class } from "./class";
 export interface Course {
   id: string;
   title: string;
-  description?: string;
+  description: string | null;
   price: number;
+  categoryId: string | null;
+  category?: {
+    id: string;
+    name: string;
+  };
   isActive: boolean;
-  categoryId?: string;
-  categoryName?: string;
-  whatsappGroupId?: string;
-  createdAt: Date;
-  thumbnail?: string;
+  whatsappGroupId: string | null;
+  thumbnail: string | null;
   modules: CourseModule[];
+  createdAt: string;
+  updatedAt: string;
+  _count: {
+    modules: number;
+    students: number;
+  };
+  totalDuration: number | null;
 }
 
 export interface CourseModule {
@@ -38,6 +47,7 @@ export interface CourseFormData {
     categoryId: string;
     isActive: boolean;
     whatsappGroupId?: string;
+    thumbnail?: string | null;
   };
   modules: CourseModule[];
   classes: Record<string, ModuleClass[]>;

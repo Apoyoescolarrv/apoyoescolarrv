@@ -1,12 +1,6 @@
 import { courses } from "@/db/schema";
 import { http } from "@/lib/http";
-import {
-  Course,
-  CourseModule,
-  CourseResponse,
-  CoursesResponse,
-  ModuleClass,
-} from "@/types/course";
+import { Course, CourseResponse, CoursesResponse } from "@/types/course";
 import { Filter } from "@/types/filters";
 
 export interface CreateCourseBasicData {
@@ -15,15 +9,27 @@ export interface CreateCourseBasicData {
   categoryId?: string;
   price: number;
   isActive: boolean;
-  thumbnail?: string;
+  thumbnail: string | null;
   previewVideoUrl?: string;
   whatsappGroupId?: string;
 }
 
-export interface CreateCourseData extends CreateCourseBasicData {
-  modules: (Omit<CourseModule, "courseId"> & {
-    classes: ModuleClass[];
-  })[];
+export interface CreateCourseData {
+  title: string;
+  description: string;
+  price: number;
+  categoryId: string;
+  isActive: boolean;
+  whatsappGroupId?: string;
+  thumbnail: string | null;
+  modules: {
+    title: string;
+    order: number;
+    classes: {
+      classId: string;
+      order: number;
+    }[];
+  }[];
 }
 
 export const CoursesService = {

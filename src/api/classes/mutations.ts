@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClassesService } from "./service";
-import { http } from "@/lib/http";
 
 export const useCreateClassMutation = () => {
   const queryClient = useQueryClient();
@@ -44,16 +43,14 @@ export const useDeleteClassMutation = () => {
   });
 };
 
-export const useUploadVideoMutation = () => {
+export const useUploadMediaMutation = () => {
   return useMutation({
-    mutationFn: ClassesService.uploadVideo,
+    mutationFn: ClassesService.uploadMedia,
   });
 };
 
-export const useDeleteVideoMutation = () => {
+export const useDeleteMediaMutation = () => {
   return useMutation({
-    mutationFn: async (url: string) => {
-      await http.delete(`/classes/upload?url=${encodeURIComponent(url)}`);
-    },
+    mutationFn: ClassesService.deleteMedia,
   });
 };
