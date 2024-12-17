@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
-import { Course } from "@/types/courses";
+import { Course } from "@/types/course";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -35,12 +35,12 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: "El título debe tener al menos 2 caracteres.",
   }),
-  description: z.string().nullable(),
-  categoryId: z.string().nullable(),
+  description: z.string().optional(),
+  categoryId: z.string().optional(),
   price: z.number().min(0),
   isActive: z.boolean().default(true),
-  thumbnail: z.string().url().nullable(),
-  previewVideoUrl: z.string().url().nullable(),
+  thumbnail: z.string().url().optional(),
+  previewVideoUrl: z.string().url().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -61,12 +61,12 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: course?.title || "",
-      description: course?.description || null,
-      categoryId: course?.categoryId || null,
+      description: course?.description || undefined,
+      categoryId: course?.categoryId || undefined,
       price: course?.price || 0,
       isActive: course?.isActive ?? true,
-      thumbnail: course?.thumbnail || null,
-      previewVideoUrl: course?.previewVideoUrl || null,
+      thumbnail: course?.thumbnail || undefined,
+      previewVideoUrl: course?.previewVideoUrl || undefined,
     },
   });
 
@@ -74,7 +74,10 @@ export function CourseForm({ onSuccess, course }: CourseFormProps) {
     startTransition(async () => {
       try {
         if (course) {
-          await updateCourse({ id: course.id, ...values });
+          await updateCourse({
+            id: course.id,
+            ...values,
+          });
           toast({
             title: "Curso actualizado",
             description: "El curso se ha actualizado correctamente.",

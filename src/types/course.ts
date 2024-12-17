@@ -9,6 +9,7 @@ export interface Course {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  modules: CourseModule[];
   thumbnail?: string;
   previewVideoUrl?: string;
 }
@@ -18,7 +19,7 @@ export interface CourseModule {
   courseId?: string;
   title: string;
   order: number;
-  classes?: ModuleClass[];
+  moduleClasses?: ModuleClass[];
 }
 
 export interface ModuleClass {
@@ -33,7 +34,7 @@ export interface CourseFormData {
   basics: {
     title: string;
     description: string;
-    price: string;
+    price: number;
     categoryId: string;
     isActive: boolean;
   };

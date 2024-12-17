@@ -1,5 +1,11 @@
 import { db } from "@/db/drizzle";
-import { classes, modules, courses, purchases } from "@/db/schema";
+import {
+  classes,
+  modules,
+  courses,
+  purchases,
+  moduleClasses,
+} from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { verifyToken } from "@/lib/verify-token";
 import { and, eq } from "drizzle-orm";
@@ -10,17 +16,17 @@ export const GET = buildEndpoint(
     verifyToken(async (req, userId) => {
       const classId = req.nextUrl.pathname.split("/")[3];
 
-      // Obtener la clase con su módulo y curso
       const [classData] = await db
         .select({
           classId: classes.id,
-          moduleId: classes.moduleId,
+          moduleId: modules.id,
           isPreview: classes.isPreview,
           videoUrl: classes.videoUrl,
           courseId: courses.id,
         })
         .from(classes)
-        .innerJoin(modules, eq(classes.moduleId, modules.id))
+        .innerJoin(moduleClasses, eq(classes.id, moduleClasses.classId))
+        .innerJoin(modules, eq(moduleClasses.moduleId, modules.id))
         .innerJoin(courses, eq(modules.courseId, courses.id))
         .where(eq(classes.id, classId));
 
@@ -31,12 +37,10 @@ export const GET = buildEndpoint(
         );
       }
 
-      // Si es una clase de preview, permitir acceso
       if (classData.isPreview) {
         return NextResponse.json({ url: classData.videoUrl });
       }
 
-      // Verificar si el usuario ha comprado el curso
       const [purchase] = await db
         .select()
         .from(purchases)

@@ -4,9 +4,9 @@ import {
   buildEndpoint,
   getPaginationParams,
   getSearchQuery,
-  PaginatedResponse,
 } from "@/lib/build-endpoint";
 import { verifyToken } from "@/lib/verify-token";
+import { PaginatedResponse } from "@/types/pagination";
 import { count, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

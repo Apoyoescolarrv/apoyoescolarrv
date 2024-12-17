@@ -1,6 +1,16 @@
 "use client";
 
-import { useCategoriesQuery } from "@/api/categories/query";
+import { useInfiniteCategoriesQuery } from "@/api/categories/query";
+import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/use-debounce";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Form,
   FormControl,
@@ -8,19 +18,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { CourseFormData } from "@/types/course";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -29,8 +42,8 @@ const formSchema = z.object({
     message: "El título debe tener al menos 2 caracteres.",
   }),
   description: z.string(),
-  price: z.string().min(1, {
-    message: "El precio es requerido.",
+  price: z.number().min(0, {
+    message: "El precio debe ser mayor a 0.",
   }),
   categoryId: z.string().min(1, {
     message: "La categoría es requerida.",
@@ -49,18 +62,48 @@ export function CourseBasicsForm({
   defaultValues,
   formRef,
 }: CourseBasicsFormProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+
+  const {
+    data: categoriesData,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    isLoading: isCategoriesLoading,
+  } = useInfiniteCategoriesQuery({
+    search: debouncedSearch,
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: defaultValues?.title || "",
       description: defaultValues?.description || "",
-      price: defaultValues?.price || "",
+      price: defaultValues?.price || 0,
       categoryId: defaultValues?.categoryId || "",
       isActive: defaultValues?.isActive || false,
     },
   });
 
-  const { data: categoriesData } = useCategoriesQuery();
+  const categories = categoriesData?.pages.flatMap((page) => page.data) || [];
+
+  const onOpenChange = (open: boolean) => {
+    setOpen(open);
+    if (open) {
+      setSearch("");
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const bottom =
+      e.currentTarget.scrollHeight - e.currentTarget.scrollTop ===
+      e.currentTarget.clientHeight;
+    if (bottom && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   return (
     <Form {...form}>
@@ -108,17 +151,21 @@ export function CourseBasicsForm({
               <FormItem>
                 <FormLabel>Precio</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    {...field}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (!value || !isNaN(Number(value))) {
-                        field.onChange(value);
-                      }
-                    }}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      className="pl-7"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? Number(value) : 0);
+                      }}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,20 +178,83 @@ export function CourseBasicsForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Categoría</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categoriesData?.data.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={open} onOpenChange={onOpenChange}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        disabled={isCategoriesLoading}
+                      >
+                        {isCategoriesLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : field.value ? (
+                          categories.find(
+                            (category) => category.id === field.value
+                          )?.name
+                        ) : (
+                          "Selecciona una categoría"
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput
+                        placeholder="Buscar categoría..."
+                        value={search}
+                        onValueChange={setSearch}
+                      />
+                      <CommandList onScroll={handleScroll}>
+                        {isCategoriesLoading ? (
+                          <div className="p-2">
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="mt-2 h-8 w-full" />
+                            <Skeleton className="mt-2 h-8 w-full" />
+                          </div>
+                        ) : (
+                          <>
+                            <CommandEmpty>
+                              No se encontraron categorías
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {categories.map((category) => (
+                                <CommandItem
+                                  key={category.id}
+                                  value={category.name}
+                                  onSelect={() => {
+                                    form.setValue("categoryId", category.id);
+                                    setOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      category.id === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {category.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </>
+                        )}
+                        {isFetchingNextPage && (
+                          <div className="py-2 text-center text-sm text-muted-foreground">
+                            Cargando más categorías...
+                          </div>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -158,6 +268,11 @@ export function CourseBasicsForm({
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">Curso Activo</FormLabel>
+                <FormDescription>
+                  Al activar el curso, estará visible para los estudiantes y
+                  podrán comprarlo. Asegúrate de haber configurado todo
+                  correctamente antes de activarlo.
+                </FormDescription>
                 <FormMessage />
               </div>
               <FormControl>

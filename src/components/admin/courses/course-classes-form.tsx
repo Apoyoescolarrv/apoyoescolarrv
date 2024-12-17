@@ -32,6 +32,7 @@ import {
 import { GripVertical, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface CourseClassesFormProps {
   modules: CourseModule[];
@@ -141,7 +142,6 @@ function DroppableModule({
   });
 
   if (!moduleId) {
-    console.error("Módulo sin ID:", module);
     return null;
   }
 
@@ -164,12 +164,11 @@ export function CourseClassesForm({
   defaultValues = {},
   formRef,
 }: CourseClassesFormProps) {
-  console.log("Módulos recibidos:", modules);
-
   const [moduleClasses, setModuleClasses] =
     useState<Record<string, ModuleClass[]>>(defaultValues);
   const [activeId, setActiveId] = useState<string | null>(null);
   const { data: classesData, isLoading } = useClassesQuery();
+  const [search, setSearch] = useState("");
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -199,13 +198,6 @@ export function CourseClassesForm({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    console.log({
-      activeId,
-      overId,
-      overData: over.data.current,
-      activeData: active.data.current,
-    });
-
     // Si el destino es la lista de clases disponibles
     if (overId === "available" && activeId.includes("module-")) {
       const [, sourceModuleId, classId] = activeId.split("-");
@@ -228,10 +220,6 @@ export function CourseClassesForm({
       const targetModuleId = (over.data.current as { moduleId: string })
         ?.moduleId;
       if (!targetModuleId) {
-        console.error(
-          "No se encontró el moduleId en el destino",
-          over.data.current
-        );
         return;
       }
 
@@ -255,7 +243,6 @@ export function CourseClassesForm({
           );
 
           if (existsInAnyModule) {
-            console.log("La clase ya existe en un módulo");
             return prev;
           }
 
@@ -344,7 +331,16 @@ export function CourseClassesForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(moduleClasses);
+    // Asegurarnos de que cada módulo tenga un array de clases, aunque esté vacío
+    const completeModuleClasses = modules.reduce((acc, module) => {
+      if (!module.id) return acc;
+      return {
+        ...acc,
+        [module.id]: moduleClasses[module.id] || [],
+      };
+    }, {} as Record<string, ModuleClass[]>);
+
+    onSubmit(completeModuleClasses);
   };
 
   return (
@@ -361,10 +357,20 @@ export function CourseClassesForm({
             <div className="sticky top-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Clases Disponibles</CardTitle>
-                  <CardDescription>
-                    Arrastra las clases a los módulos correspondientes
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Clases Disponibles</CardTitle>
+                      <CardDescription>
+                        Arrastra las clases a los módulos correspondientes
+                      </CardDescription>
+                      <Input
+                        placeholder="Buscar clases..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full mt-3"
+                      />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
@@ -375,13 +381,19 @@ export function CourseClassesForm({
                     </div>
                   ) : (
                     <div className="space-y-2" id="available">
-                      {availableClasses?.map((classItem) => (
-                        <DraggableClassItem
-                          key={`available-${classItem.id}`}
-                          id={classItem.id}
-                          class={classItem}
-                        />
-                      ))}
+                      {availableClasses
+                        ?.filter((classItem) =>
+                          classItem.title
+                            .toLowerCase()
+                            .includes(search.toLowerCase())
+                        )
+                        .map((classItem) => (
+                          <DraggableClassItem
+                            key={`available-${classItem.id}`}
+                            id={classItem.id}
+                            class={classItem}
+                          />
+                        ))}
                     </div>
                   )}
                 </CardContent>
@@ -392,10 +404,8 @@ export function CourseClassesForm({
           {/* Módulos */}
           <div className="space-y-4">
             {modules.map((module) => {
-              console.log("Módulo actual:", module);
               const moduleId = module.id;
               if (!moduleId) {
-                console.warn("Módulo sin ID:", module);
                 return null;
               }
 

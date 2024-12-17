@@ -1,5 +1,27 @@
 import { http } from "@/lib/http";
-import { CoursesResponse, CourseResponse, Course } from "@/types/courses";
+import {
+  Course,
+  CourseModule,
+  ModuleClass,
+  CoursesResponse,
+  CourseResponse,
+} from "@/types/course";
+
+export interface CreateCourseBasicData {
+  title: string;
+  description?: string;
+  categoryId?: string;
+  price: number;
+  isActive: boolean;
+  thumbnail?: string;
+  previewVideoUrl?: string;
+}
+
+export interface CreateCourseData extends CreateCourseBasicData {
+  modules: (Omit<CourseModule, "courseId"> & {
+    classes: ModuleClass[];
+  })[];
+}
 
 export const CoursesService = {
   getCourses: async (page = 1, limit = 10, search?: string) => {
@@ -14,9 +36,7 @@ export const CoursesService = {
     return data.course;
   },
 
-  createCourse: async (
-    courseData: Omit<Course, "id" | "createdAt" | "updatedAt">
-  ) => {
+  createCourse: async (courseData: CreateCourseBasicData) => {
     const { data } = await http.post<CourseResponse>("/courses", courseData);
     return data.course;
   },

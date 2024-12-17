@@ -2,15 +2,24 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { CourseBasicsForm } from "./course-basics-form";
 import { CourseModulesForm } from "./course-modules-form";
 import { CourseClassesForm } from "./course-classes-form";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { CourseFormData, CourseModule, ModuleClass } from "@/types/course";
+import {
+  Course,
+  CourseFormData,
+  CourseModule,
+  ModuleClass,
+} from "@/types/course";
 import { useClassesQuery } from "@/api/classes/query";
+import { useCreateCourseMutation } from "@/api/courses/mutations";
+import { useUpdateCourseMutation } from "@/api/courses/mutations";
+import { catchAxiosError } from "@/lib/catch-axios-error";
+import { CreateCourseData } from "@/api/courses/service";
 
 const steps = [
   {
@@ -35,12 +44,59 @@ const steps = [
   },
 ];
 
-export function CourseCreationStepper() {
+interface CourseCreationStepperProps {
+  isEditing?: boolean;
+  courseId?: string;
+  defaultValues?: Course;
+}
+
+export function CourseCreationStepper({
+  isEditing,
+  courseId,
+  defaultValues,
+}: CourseCreationStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [courseData, setCourseData] = useState<Partial<CourseFormData>>({});
+  const [courseData, setCourseData] = useState<Partial<CourseFormData>>(() => {
+    if (defaultValues) {
+      return {
+        basics: {
+          title: defaultValues.title,
+          description: defaultValues.description || "",
+          price: defaultValues.price,
+          categoryId: defaultValues.categoryId || "",
+          isActive: defaultValues.isActive || false,
+        },
+        modules: defaultValues.modules.map((module) => ({
+          id: module.id,
+          title: module.title,
+          order: module.order,
+          courseId: module.courseId,
+        })),
+        classes: defaultValues.modules.reduce(
+          (acc: Record<string, ModuleClass[]>, module: CourseModule) => {
+            if (!module.id) return acc;
+            return {
+              ...acc,
+              [module.id]: (module.moduleClasses || []).map((mc) => ({
+                id: mc.id,
+                moduleId: mc.moduleId,
+                classId: mc.classId,
+                order: mc.order,
+              })),
+            };
+          },
+          {}
+        ),
+      };
+    }
+    return {};
+  });
+
   const router = useRouter();
   const { toast } = useToast();
   const { data: classesData } = useClassesQuery();
+  const createCourseMutation = useCreateCourseMutation();
+  const updateCourseMutation = useUpdateCourseMutation();
 
   // Referencias a los formularios
   const basicsFormRef = useRef<HTMLFormElement>(null);
@@ -63,13 +119,61 @@ export function CourseCreationStepper() {
     setCurrentStep((prev) => prev + 1);
   };
 
-  const handleCreateCourse = () => {
-    // Aquí iría la lógica para crear el curso
-    toast({
-      title: "Curso creado",
-      description: "El curso se ha creado correctamente.",
-    });
-    router.push("/courses");
+  const handleSaveCourse = async () => {
+    if (!courseData.basics || !courseData.modules || !courseData.classes) {
+      toast({
+        title: "Error",
+        description: "Faltan datos del curso",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isEditing && courseId) {
+        await updateCourseMutation.mutateAsync({
+          id: courseId,
+          ...courseData.basics,
+          modules: courseData.modules.map((module) => ({
+            title: module.title,
+            order: module.order,
+            moduleClasses: (courseData.classes![module.id!] || []).map(
+              (moduleClass) => ({
+                classId: moduleClass.classId,
+                order: moduleClass.order,
+              })
+            ),
+          })),
+        });
+      } else {
+        const createData: CreateCourseData = {
+          ...courseData.basics,
+          modules: courseData.modules.map((module) => ({
+            title: module.title,
+            order: module.order,
+            classes: (courseData.classes![module.id!] || []).map(
+              (moduleClass) => ({
+                classId: moduleClass.classId,
+                order: moduleClass.order,
+              })
+            ),
+          })),
+        };
+        await createCourseMutation.mutateAsync(createData);
+      }
+
+      toast({
+        title: isEditing ? "Curso actualizado" : "Curso creado",
+        description: isEditing
+          ? "El curso se ha actualizado correctamente."
+          : "El curso se ha creado correctamente.",
+      });
+
+      router.push("/admin");
+      router.refresh();
+    } catch (error) {
+      catchAxiosError(error);
+    }
   };
 
   const renderPreview = () => {
@@ -121,10 +225,6 @@ export function CourseCreationStepper() {
             </div>
           </div>
         </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleCreateCourse}>Crear Curso</Button>
-        </div>
       </div>
     );
   };
@@ -148,12 +248,7 @@ export function CourseCreationStepper() {
           />
         );
       case 2:
-        console.log(
-          "Renderizando paso de clases con módulos:",
-          courseData.modules
-        );
         if (!courseData.modules) {
-          console.warn("No hay módulos disponibles");
           return null;
         }
         return (
@@ -177,7 +272,7 @@ export function CourseCreationStepper() {
         "¿Estás seguro de que deseas cancelar la creación del curso?"
       );
       if (confirmed) {
-        router.push("/courses");
+        router.push("/admin");
       }
     } else {
       setCurrentStep((prev) => prev - 1);
@@ -186,7 +281,7 @@ export function CourseCreationStepper() {
 
   const handleNext = () => {
     if (currentStep === steps.length - 1) {
-      handleCreateCourse();
+      handleSaveCourse();
       return;
     }
 
@@ -240,11 +335,32 @@ export function CourseCreationStepper() {
       <div className="mt-8">{renderStepContent()}</div>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={handleBack}>
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          disabled={
+            createCourseMutation.isPending || updateCourseMutation.isPending
+          }
+        >
           {currentStep === 0 ? "Cancelar" : "Anterior"}
         </Button>
-        <Button onClick={handleNext}>
-          {currentStep === steps.length - 1 ? "Crear Curso" : "Siguiente"}
+        <Button
+          onClick={handleNext}
+          disabled={
+            createCourseMutation.isPending || updateCourseMutation.isPending
+          }
+        >
+          {currentStep === steps.length - 1 ? (
+            <>
+              {createCourseMutation.isPending ||
+              updateCourseMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isEditing ? "Guardar Cambios" : "Crear Curso"}
+            </>
+          ) : (
+            "Siguiente"
+          )}
         </Button>
       </div>
     </div>

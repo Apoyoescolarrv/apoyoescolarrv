@@ -11,7 +11,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import { catchAxiosError } from "@/lib/catch-axios-error";
 import { Category } from "@/types/category";
-import { Course } from "@/types/courses";
+import { Course } from "@/types/course";
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -106,7 +106,9 @@ export function CoursesTable() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push(`/courses/${row.original.id}/edit`)}
+              onClick={() =>
+                router.push(`/admin/courses/edit/${row.original.id}`)
+              }
             >
               <Pencil className="h-4 w-4" />
             </Button>
