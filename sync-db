@@ -1,9 +1,0 @@
-#!/bin/bash
-
-echo "🚀 Generando tipos de la base de datos..."
-bun run db:generate
-
-echo "📦 Aplicando migraciones..."
-bun run db:migrate
-
-echo "✅ Base de datos sincronizada correctamente"

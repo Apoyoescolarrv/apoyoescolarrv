@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
