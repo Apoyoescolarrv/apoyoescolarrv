@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/contexts/cart-context";
 import { formatCurrency, formatDuration } from "@/lib/format";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   BookOpen,
   Clock,
   GraduationCap,
@@ -19,11 +21,25 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useCart } from "@/contexts/cart-context";
+
+const benefitAnimation = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.2 },
+};
+
+const containerAnimation = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
 
 export default function CoursePage() {
+  const router = useRouter();
   const { id } = useParams();
   const { data: course, isLoading } = useCourseQuery(id as string);
   const [previewVideo, setPreviewVideo] = useState<{
@@ -85,6 +101,17 @@ export default function CoursePage() {
   return (
     <>
       <div className="container mx-auto py-8">
+        <div className="mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
@@ -252,7 +279,7 @@ export default function CoursePage() {
                         {formatCurrency(course.price)}
                       </div>
                       <p className="text-sm text-gray-500 mt-1">
-                        Precio único - Acceso de por vida
+                        Acceso por 1 año completo
                       </p>
                     </div>
 
@@ -286,24 +313,50 @@ export default function CoursePage() {
                         )}
                       </Button>
 
-                      <div className="text-sm text-gray-500 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">✓</span>
-                          <span>Acceso completo de por vida</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">✓</span>
+                      <motion.div
+                        className="text-sm text-gray-500 space-y-3"
+                        variants={containerAnimation}
+                        initial="initial"
+                        animate="animate"
+                      >
+                        <motion.div
+                          className="flex items-center gap-2"
+                          variants={benefitAnimation}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <span className="text-primary text-lg">✓</span>
+                          <span>Acceso al curso por 1 año</span>
+                        </motion.div>
+
+                        <motion.div
+                          className="flex items-center gap-2"
+                          variants={benefitAnimation}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <span className="text-primary text-lg">✓</span>
                           <span>Certificado de finalización</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">✓</span>
-                          <span>Grupo de WhatsApp de soporte</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">✓</span>
-                          <span>Actualizaciones gratuitas</span>
-                        </div>
-                      </div>
+                        </motion.div>
+
+                        <motion.div
+                          className="flex items-center gap-2"
+                          variants={benefitAnimation}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <span className="text-primary text-lg">✓</span>
+                          <span>Grupo de WhatsApp de soporte por 1 año</span>
+                        </motion.div>
+
+                        <motion.div
+                          className="flex items-center gap-2"
+                          variants={benefitAnimation}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <span className="text-primary text-lg">✓</span>
+                          <span>
+                            Actualizaciones incluidas durante tu suscripción
+                          </span>
+                        </motion.div>
+                      </motion.div>
                     </div>
                     <ShareButtons course={course} />
                   </div>
