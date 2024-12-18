@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeleteCategoryMutation } from "@/api/categories/mutations";
-import { useCategoriesQuery } from "@/api/categories/query";
+import { useCategoriesTableQuery } from "@/api/categories/query";
 import { CategoryForm } from "@/components/admin/categories/category-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export function CategoriesTable({ onCategoryCreated }: CategoriesTableProps) {
     Category | undefined
   >();
 
-  const { data, isLoading } = useCategoriesQuery({
+  const { data, isLoading } = useCategoriesTableQuery({
     page,
     search: debouncedSearch,
   });

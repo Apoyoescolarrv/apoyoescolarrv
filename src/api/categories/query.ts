@@ -9,8 +9,16 @@ interface CategoriesQueryParams {
   filters?: Filter<(typeof categories._)["columns"]>[];
 }
 
-// Query tradicional con paginación para la vista de categorías
-export const useCategoriesQuery = ({
+// Query simple para obtener todas las categorías (usado en selects y filtros)
+export const useCategoriesQuery = () => {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: () => CategoriesService.getCategories(1, 100, ""),
+  });
+};
+
+// Query con paginación para la tabla de categorías
+export const useCategoriesTableQuery = ({
   page = 1,
   search = "",
 }: CategoriesQueryParams = {}) => {

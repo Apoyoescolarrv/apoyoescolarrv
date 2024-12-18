@@ -12,7 +12,7 @@ import { buildEndpoint } from "@/lib/build-endpoint";
 import { buildWhereClause } from "@/lib/build-filters";
 import { parseFilters } from "@/lib/filters";
 import { verifyToken } from "@/lib/verify-token";
-import { asc, count, eq, sql } from "drizzle-orm";
+import { asc, count, desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
@@ -22,6 +22,7 @@ export const GET = buildEndpoint(
     const limit = Number(searchParams.get("limit")) || 10;
     const search = searchParams.get("search") || "";
     const filters = parseFilters<(typeof courses._)["columns"]>(searchParams);
+    const orderByParam = searchParams.get("orderBy");
 
     const offset = (page - 1) * limit;
 
@@ -34,6 +35,37 @@ export const GET = buildEndpoint(
     }
 
     const whereClause = buildWhereClause(courses, filters);
+
+    let orderByClause;
+    if (orderByParam) {
+      try {
+        const { field, direction } = JSON.parse(orderByParam);
+        switch (field) {
+          case "price":
+            orderByClause =
+              direction === "asc" ? asc(courses.price) : desc(courses.price);
+            break;
+          case "title":
+            orderByClause =
+              direction === "asc" ? asc(courses.title) : desc(courses.title);
+            break;
+          case "students":
+            orderByClause = sql`(
+              SELECT COUNT(*)
+              FROM ${enrollments}
+              WHERE ${enrollments.courseId} = ${courses.id}
+            ) ${direction === "asc" ? sql`ASC` : sql`DESC`}`;
+            break;
+          default:
+            orderByClause = asc(courses.createdAt);
+        }
+      } catch (error) {
+        console.log("Error parsing orderByParam", error);
+        orderByClause = asc(courses.createdAt);
+      }
+    } else {
+      orderByClause = asc(courses.createdAt);
+    }
 
     const [coursesList, total] = await Promise.all([
       db
@@ -77,7 +109,7 @@ export const GET = buildEndpoint(
         .where(whereClause)
         .limit(limit)
         .offset(offset)
-        .orderBy(asc(courses.createdAt)),
+        .orderBy(orderByClause),
       db
         .select({ count: count() })
         .from(courses)

@@ -3,6 +3,10 @@ import { http } from "@/lib/http";
 import { Course, CourseResponse, CoursesResponse } from "@/types/course";
 import { Filter } from "@/types/filters";
 
+export type CourseOrderByField =
+  | keyof (typeof courses._)["columns"]
+  | "students";
+
 export interface CreateCourseBasicData {
   title: string;
   description?: string;
@@ -37,7 +41,11 @@ export const CoursesService = {
     page = 1,
     limit = 10,
     search?: string,
-    filters: Filter<(typeof courses._)["columns"]>[] = []
+    filters: Filter<(typeof courses._)["columns"]>[] = [],
+    orderBy?: {
+      field: CourseOrderByField;
+      direction: "asc" | "desc";
+    }
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -50,6 +58,10 @@ export const CoursesService = {
 
     if (filters.length > 0) {
       params.append("filters", JSON.stringify(filters));
+    }
+
+    if (orderBy) {
+      params.append("orderBy", JSON.stringify(orderBy));
     }
 
     const { data } = await http.get<CoursesResponse>(`/courses?${params}`);
