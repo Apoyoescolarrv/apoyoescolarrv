@@ -7,7 +7,6 @@ import { ShareButtons } from "@/components/course/share-buttons";
 import { TableOfContents } from "@/components/course/table-of-contents";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDuration } from "@/lib/format";
 import { motion } from "framer-motion";
@@ -337,35 +336,6 @@ export default function CoursePage() {
                       </motion.div>
                     </div>
                     <ShareButtons course={course} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="border-b">
-                  <CardTitle className="text-xl font-semibold">
-                    Progreso del curso
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progreso total</span>
-                        <span className="text-primary">0%</span>
-                      </div>
-                      <Progress value={0} className="h-2" />
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      <div className="flex justify-between mb-1">
-                        <span>Clases completadas</span>
-                        <span>0/{totalClasses}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Tiempo total</span>
-                        <span>{formatDuration(totalDuration || 0)}</span>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>

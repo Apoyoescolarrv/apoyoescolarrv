@@ -132,18 +132,14 @@ function DroppableModule({
   module: CourseModule;
   children: React.ReactNode;
 }) {
-  const moduleId = module.id || module.courseId;
+  const moduleId = module.id || `temp-${module.order}`;
   const { setNodeRef, isOver } = useDroppable({
-    id: `module-${moduleId || ""}`,
+    id: `module-${moduleId}`,
     data: {
       type: "module",
       moduleId,
     },
   });
-
-  if (!moduleId) {
-    return null;
-  }
 
   return (
     <div
@@ -431,16 +427,13 @@ export function CourseClassesForm({
 
           {/* Módulos */}
           <div className="space-y-4">
-            {modules.map((module) => {
-              const moduleId = module.id;
-              if (!moduleId) {
-                return null;
-              }
+            {modules.map((module, index) => {
+              const moduleId = module.id || `temp-${module.order ?? index}`;
 
               return (
                 <Card key={moduleId}>
                   <CardHeader>
-                    <CardTitle>{module.title}</CardTitle>
+                    <CardTitle>{module.title || "Nuevo módulo"}</CardTitle>
                     <CardDescription>
                       {moduleClasses[moduleId]?.length || 0} clases
                     </CardDescription>
