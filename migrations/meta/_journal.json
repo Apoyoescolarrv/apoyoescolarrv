@@ -71,6 +71,13 @@
       "when": 1734546197779,
       "tag": "0009_tidy_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1734552538569,
+      "tag": "0010_flawless_vulcan",
+      "breakpoints": true
     }
   ]
 }

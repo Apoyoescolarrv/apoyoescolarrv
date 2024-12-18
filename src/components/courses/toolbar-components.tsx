@@ -79,7 +79,7 @@ export function SortMenu({ value, onChange, options }: SortMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="gap-2" data-sort={value}>
           <SlidersHorizontal className="h-4 w-4" />
-          Ordenar
+          <span className="hidden md:block">Ordenar</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -120,7 +120,7 @@ export function CategoryMenu({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Filter className="h-4 w-4" />
-          Filtros
+          <span className="hidden md:block">Filtros</span>
           {selectedCategories.length > 0 && (
             <Badge variant="secondary" className="ml-2">
               {selectedCategories.length}

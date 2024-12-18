@@ -4,9 +4,9 @@ import {
   categories,
   classes,
   courses,
-  enrollments,
   moduleClasses,
   modules,
+  purchases,
 } from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { buildWhereClause } from "@/lib/build-filters";
@@ -52,8 +52,9 @@ export const GET = buildEndpoint(
           case "students":
             orderByClause = sql`(
               SELECT COUNT(*)
-              FROM ${enrollments}
-              WHERE ${enrollments.courseId} = ${courses.id}
+              FROM ${purchases}
+              WHERE ${purchases.courseId} = ${courses.id}
+              AND ${purchases.paymentStatus} = 'completed'
             ) ${direction === "asc" ? sql`ASC` : sql`DESC`}`;
             break;
           default:
@@ -92,8 +93,9 @@ export const GET = buildEndpoint(
             )`.as("modules_count"),
             students: sql`(
               SELECT COUNT(*)::int
-              FROM ${enrollments}
-              WHERE ${enrollments.courseId} = ${courses.id}
+              FROM ${purchases}
+              WHERE ${purchases.courseId} = ${courses.id}
+              AND ${purchases.paymentStatus} = 'completed'
             )`.as("students_count"),
           },
           totalDuration: sql`(

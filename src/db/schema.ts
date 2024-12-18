@@ -129,16 +129,6 @@ export const sharedClasses = pgTable("shared_classes", {
     .notNull(),
 });
 
-export const enrollments = pgTable("enrollments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  courseId: uuid("course_id")
-    .notNull()
-    .references(() => courses.id, { onDelete: "cascade" }),
-  userId: uuid("user_id").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
 export const cartItems = pgTable("cart_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
