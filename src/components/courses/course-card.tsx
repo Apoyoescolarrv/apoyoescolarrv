@@ -47,6 +47,7 @@ export default function CourseCard({
           <Image
             src={course.thumbnail}
             alt={course.title}
+            draggable={false}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />

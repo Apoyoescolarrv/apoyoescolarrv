@@ -150,6 +150,7 @@ export default function CoursePage() {
                       <Image
                         src={course.thumbnail}
                         alt={course.title}
+                        draggable={false}
                         fill
                         className="object-cover"
                         priority

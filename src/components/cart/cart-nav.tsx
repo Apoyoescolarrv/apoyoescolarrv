@@ -75,7 +75,7 @@ export function CartNav() {
         >
           <ShoppingCart className="h-5 w-5" />
           {cartItems.length > 0 && (
-            <span className="absolute bg-secondary text-black -top-2 -right-2 rounded-full w-5 h-5 text-xs flex items-center justify-center">
+            <span className="absolute bg-yellowrv text-black -top-2 -right-2 rounded-full w-5 h-5 text-xs flex items-center justify-center">
               {cartItems.length}
             </span>
           )}

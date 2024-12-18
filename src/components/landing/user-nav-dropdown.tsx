@@ -1,13 +1,13 @@
 "use client";
 
-import { logout } from "@/lib/logout";
-import { User } from "@/types/user";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { logout } from "@/lib/logout";
+import { User } from "@/types/user";
 import Link from "next/link";
 
 export default function UserNavDropdown({ user }: { user: User }) {
