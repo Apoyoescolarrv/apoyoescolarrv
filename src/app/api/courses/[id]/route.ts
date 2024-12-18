@@ -1,5 +1,5 @@
 import { db } from "@/db/drizzle";
-import { courses, moduleClasses, modules } from "@/db/schema";
+import { courses, moduleClasses, modules, classes } from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
 import { verifyToken } from "@/lib/verify-token";
 import { CourseModule, ModuleClass } from "@/types/course";
@@ -22,7 +22,8 @@ export const GET = buildEndpoint(
       .from(courses)
       .where(eq(courses.id, params.id))
       .leftJoin(modules, eq(modules.courseId, courses.id))
-      .leftJoin(moduleClasses, eq(moduleClasses.moduleId, modules.id));
+      .leftJoin(moduleClasses, eq(moduleClasses.moduleId, modules.id))
+      .leftJoin(classes, eq(classes.id, moduleClasses.classId));
 
     if (!course || course.length === 0) {
       return NextResponse.json(
@@ -44,15 +45,16 @@ export const GET = buildEndpoint(
         };
       }
 
-      if (row.module_classes) {
+      if (row.module_classes && row.classes) {
         acc[moduleId].moduleClasses.push({
           ...row.module_classes,
           order: row.module_classes.order ?? 0,
+          class: row.classes,
         });
       }
 
       return acc;
-    }, {} as Record<string, CourseModule & { moduleClasses: ModuleClass[] }>);
+    }, {} as Record<string, CourseModule & { moduleClasses: (ModuleClass & { class: typeof classes.$inferSelect })[] }>);
 
     return NextResponse.json({
       course: {

@@ -287,9 +287,14 @@ export function CourseClassesForm({
               (mc) => `module-${sourceModuleId}-${mc.classId}` === overId
             );
 
-            // Si no se encuentra el índice de destino, agregar al final
+            // Ajustar el índice de destino si es después de la posición original
             const targetIndex =
-              overIndex === -1 ? newClasses.length : overIndex;
+              overIndex === -1
+                ? newClasses.length
+                : overIndex > activeIndex
+                ? overIndex - 1
+                : overIndex;
+
             newClasses.splice(targetIndex, 0, movedClass);
 
             return {

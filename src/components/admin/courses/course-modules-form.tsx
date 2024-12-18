@@ -165,7 +165,18 @@ export function CourseModulesForm({
     if (over && active.id !== over.id) {
       const oldIndex = fields.findIndex((field) => field.fieldId === active.id);
       const newIndex = fields.findIndex((field) => field.fieldId === over.id);
+
+      // Mover el módulo
       move(oldIndex, newIndex);
+
+      // Actualizar el orden de todos los módulos
+      form.setValue(
+        "modules",
+        fields.map((field, index) => ({
+          ...field,
+          order: index,
+        }))
+      );
     }
   };
 

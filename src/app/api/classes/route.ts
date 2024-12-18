@@ -55,38 +55,23 @@ export const GET = buildEndpoint(
 );
 
 export const POST = buildEndpoint(
-  verifyToken(async (req, userId, isAdmin) => {
+  verifyToken(async (req: NextRequest, userId: string, isAdmin: boolean) => {
     if (!isAdmin) {
       return NextResponse.json(
-        { error: "No tienes permisos para crear clases" },
+        { error: "No tienes permisos para realizar esta acción" },
         { status: 403 }
       );
     }
 
-    const { title, description, videoUrl, duration, isPreview } =
-      await req.json();
+    const data = await req.json();
 
-    if (!title || !videoUrl) {
-      return NextResponse.json(
-        { error: "El título y la URL del video son requeridos" },
-        { status: 400 }
-      );
-    }
+    const [newClass] = await db.insert(classes).values(data).returning();
 
-    const [newClass] = await db
-      .insert(classes)
-      .values({
-        title,
-        description,
-        videoUrl,
-        duration,
-        isPreview: isPreview ?? false,
-      })
-      .returning();
-
-    return NextResponse.json({ class: newClass });
+    return NextResponse.json(newClass);
   }),
-  { errorMessage: "Error al crear la clase" }
+  {
+    errorMessage: "Error al crear la clase",
+  }
 );
 
 export const PUT = buildEndpoint(

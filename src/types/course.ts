@@ -20,6 +20,16 @@ export interface ModuleClass {
   moduleId?: string;
   classId: string;
   order: number;
+  class?: {
+    id: string;
+    title: string;
+    description: string | null;
+    videoUrl: string;
+    duration: number | null;
+    isPreview: boolean | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+  };
 }
 
 export interface Course extends CourseBasics {
@@ -38,6 +48,7 @@ export interface Course extends CourseBasics {
   };
   createdAt: string;
   updatedAt: string;
+  previewVideoUrl: string;
 }
 
 export interface CourseFormData {
