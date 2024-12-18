@@ -1,257 +1,26 @@
 "use client";
 
 import { useCourseQuery } from "@/api/courses/query";
+import { Module } from "@/components/course/module";
+import { ShareButtons } from "@/components/course/share-buttons";
+import { TableOfContents } from "@/components/course/table-of-contents";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDuration } from "@/lib/format";
-import { Course, CourseModule, ModuleClass } from "@/types/course";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BookOpen,
-  ChevronDown,
-  ChevronUp,
   Clock,
-  Facebook,
   GraduationCap,
-  List,
-  Lock,
-  MessageCircle,
   Play,
-  Share2,
   ShoppingCart,
-  Twitter,
   Users,
 } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-
-interface ModuleProps {
-  module: CourseModule & { moduleClasses?: ModuleClass[] };
-  index: number;
-  onPreviewClick: (videoUrl: string, title: string) => void;
-  isActive?: boolean;
-}
-
-function Module({ module, index, onPreviewClick, isActive }: ModuleProps) {
-  const [isOpen, setIsOpen] = useState(isActive);
-  const totalDuration =
-    module.moduleClasses?.reduce(
-      (acc, mc) => acc + (mc.class?.duration || 0),
-      0
-    ) ?? 0;
-
-  const completedClasses =
-    module.moduleClasses?.filter((mc) => mc.class?.isPreview).length ?? 0;
-  const totalClasses = module.moduleClasses?.length || 0;
-  const progress = (completedClasses / totalClasses) * 100;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="border rounded-lg overflow-hidden"
-    >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
-              {index + 1}
-            </span>
-            <div className="text-left">
-              <h3 className="font-medium">{module.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <Play className="h-3 w-3" />
-                  {module.moduleClasses?.length} clases
-                </span>
-                {totalDuration > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDuration(totalDuration)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          {isOpen ? (
-            <ChevronUp className="h-5 w-5 text-gray-500" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-gray-500" />
-          )}
-        </div>
-        <div className="mt-2">
-          <Progress value={progress} className="h-1" />
-        </div>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.ul
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="divide-y"
-          >
-            {module.moduleClasses?.map((moduleClass, classIndex) => (
-              <motion.li
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                key={moduleClass.id}
-                className="p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500 w-6 text-center">
-                      {classIndex + 1}
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium">
-                          {moduleClass.class?.title}
-                        </h4>
-                        {!moduleClass.class?.isPreview && (
-                          <Lock className="h-3 w-3 text-gray-400" />
-                        )}
-                      </div>
-                      {moduleClass.class?.duration && (
-                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDuration(moduleClass.class.duration)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {moduleClass.class?.isPreview &&
-                    moduleClass.class?.videoUrl && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPreviewClick(
-                            moduleClass.class!.videoUrl,
-                            moduleClass.class!.title
-                          );
-                        }}
-                      >
-                        <Play className="h-4 w-4" />
-                        Vista previa
-                      </Button>
-                    )}
-                </div>
-              </motion.li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-interface TableOfContentsProps {
-  course: Course;
-  activeModuleIndex: number;
-  onModuleClick: (index: number) => void;
-}
-
-function TableOfContents({
-  course,
-  activeModuleIndex,
-  onModuleClick,
-}: TableOfContentsProps) {
-  return (
-    <Card>
-      <CardHeader className="border-b">
-        <CardTitle className="text-xl font-semibold flex items-center gap-2">
-          <List className="h-5 w-5" />
-          Contenido del curso
-        </CardTitle>
-        <p className="text-sm text-gray-500">
-          {course.modules?.length} módulos
-        </p>
-      </CardHeader>
-      <CardContent className="p-4">
-        <nav className="space-y-1">
-          {course.modules?.map((module, index) => (
-            <button
-              key={module.id}
-              onClick={() => onModuleClick(index)}
-              className={`text-sm w-full text-left px-3 py-2 rounded flex items-center gap-2 transition-colors ${
-                activeModuleIndex === index
-                  ? "bg-primary/10 text-primary"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <span className="text-sm w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                {index + 1}
-              </span>
-              <span className="line-clamp-1">{module.title}</span>
-            </button>
-          ))}
-        </nav>
-      </CardContent>
-    </Card>
-  );
-}
-
-interface ShareButtonsProps {
-  course: Course;
-}
-
-function ShareButtons({ course }: ShareButtonsProps) {
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const shareText = `¡Mira este curso: ${course.title}!`;
-
-  const shareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrl
-    )}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-      shareUrl
-    )}&text=${encodeURIComponent(shareText)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(
-      `${shareText} ${shareUrl}`
-    )}`,
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500 flex items-center gap-1">
-        <Share2 className="h-4 w-4" />
-      </span>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-blue-600"
-        onClick={() => window.open(shareLinks.facebook, "_blank")}
-      >
-        <Facebook className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-sky-500"
-        onClick={() => window.open(shareLinks.twitter, "_blank")}
-      >
-        <Twitter className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-green-600"
-        onClick={() => window.open(shareLinks.whatsapp, "_blank")}
-      >
-        <MessageCircle className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-}
 
 export default function CoursePage() {
   const { id } = useParams();
@@ -331,13 +100,21 @@ export default function CoursePage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="relative w-full aspect-video group">
-                  {previewVideo?.url || course.previewVideoUrl ? (
+                  {previewVideo?.url ? (
                     <video
-                      src={previewVideo?.url || course.previewVideoUrl}
+                      src={previewVideo.url}
+                      controls
+                      className="w-full h-full"
+                      autoPlay
+                    >
+                      Tu navegador no soporta el elemento de video.
+                    </video>
+                  ) : course.previewVideoUrl ? (
+                    <video
+                      src={course.previewVideoUrl}
                       controls
                       className="w-full h-full"
                       poster={course.thumbnail}
-                      autoPlay
                     >
                       Tu navegador no soporta el elemento de video.
                     </video>
