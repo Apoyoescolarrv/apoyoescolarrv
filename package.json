@@ -57,6 +57,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.1",
     "react-phone-number-input": "^3.4.10",
+    "react-player": "^2.16.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.1"
