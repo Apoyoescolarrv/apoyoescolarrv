@@ -1,6 +1,7 @@
 "use client";
 
 import { useCourseQuery } from "@/api/courses/query";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { Module } from "@/components/course/module";
 import { ShareButtons } from "@/components/course/share-buttons";
 import { TableOfContents } from "@/components/course/table-of-contents";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCart } from "@/contexts/cart-context";
 import { formatCurrency, formatDuration } from "@/lib/format";
 import { motion } from "framer-motion";
 import {
@@ -17,7 +17,6 @@ import {
   Clock,
   GraduationCap,
   Play,
-  ShoppingCart,
   Users,
 } from "lucide-react";
 import Image from "next/image";
@@ -47,7 +46,6 @@ export default function CoursePage() {
     title: string;
   } | null>(null);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
-  const { addItem, isInCart, removeItem } = useCart();
 
   if (isLoading) {
     return (
@@ -284,34 +282,13 @@ export default function CoursePage() {
                     </div>
 
                     <div className="space-y-4">
-                      <Button
-                        className="w-full"
-                        variant={
-                          isInCart(course?.id || "") ? "secondary" : "default"
-                        }
-                        size="lg"
-                        onClick={() => {
-                          if (course) {
-                            if (isInCart(course.id)) {
-                              removeItem(course.id);
-                            } else {
-                              addItem(course);
-                            }
-                          }
-                        }}
-                      >
-                        {isInCart(course?.id || "") ? (
-                          <>
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Quitar del carrito
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Añadir al carrito
-                          </>
-                        )}
-                      </Button>
+                      {course && (
+                        <AddToCartButton
+                          course={course}
+                          className="w-full"
+                          size="lg"
+                        />
+                      )}
 
                       <motion.div
                         className="text-sm text-gray-500 space-y-3"

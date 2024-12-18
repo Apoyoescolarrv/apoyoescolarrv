@@ -1,6 +1,7 @@
 "use client";
 
 import { useCoursesQuery } from "@/api/courses/query";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,9 +10,9 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Clock, GraduationCap, Users } from "lucide-react";
 import { formatCurrency, formatDuration } from "@/lib/format";
 import { Course } from "@/types/course";
+import { Clock, GraduationCap, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -121,9 +122,8 @@ export function CoursesList() {
                     Ver Detalles
                   </Button>
                 </Link>
-                <Link href={`/courses/${course.id}/buy`}>
-                  <Button className="w-full">Agregar al carrito</Button>
-                </Link>
+
+                <AddToCartButton course={course} className="w-full" />
               </div>
             </CardFooter>
           </Card>
