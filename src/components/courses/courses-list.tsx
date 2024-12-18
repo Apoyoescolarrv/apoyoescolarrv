@@ -122,7 +122,7 @@ export function CoursesList() {
                   </Button>
                 </Link>
                 <Link href={`/courses/${course.id}/buy`}>
-                  <Button className="w-full">Comprar</Button>
+                  <Button className="w-full">Agregar al carrito</Button>
                 </Link>
               </div>
             </CardFooter>

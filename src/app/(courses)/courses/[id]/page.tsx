@@ -21,6 +21,7 @@ import {
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { useCart } from "@/contexts/cart-context";
 
 export default function CoursePage() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ export default function CoursePage() {
     title: string;
   } | null>(null);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+  const { addItem, isInCart, removeItem } = useCart();
 
   if (isLoading) {
     return (
@@ -255,9 +257,33 @@ export default function CoursePage() {
                     </div>
 
                     <div className="space-y-4">
-                      <Button className="w-full" size="lg">
-                        <ShoppingCart className="h-4 w-4" />
-                        Añadir al carrito
+                      <Button
+                        className="w-full"
+                        variant={
+                          isInCart(course?.id || "") ? "secondary" : "default"
+                        }
+                        size="lg"
+                        onClick={() => {
+                          if (course) {
+                            if (isInCart(course.id)) {
+                              removeItem(course.id);
+                            } else {
+                              addItem(course);
+                            }
+                          }
+                        }}
+                      >
+                        {isInCart(course?.id || "") ? (
+                          <>
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Quitar del carrito
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Añadir al carrito
+                          </>
+                        )}
                       </Button>
 
                       <div className="text-sm text-gray-500 space-y-3">
