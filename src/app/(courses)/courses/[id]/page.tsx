@@ -331,21 +331,13 @@ export default function CoursePage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="relative w-full aspect-video group">
-                  {previewVideo?.url ? (
+                  {previewVideo?.url || course.previewVideoUrl ? (
                     <video
-                      src={previewVideo.url}
-                      controls
-                      className="w-full h-full"
-                      autoPlay
-                    >
-                      Tu navegador no soporta el elemento de video.
-                    </video>
-                  ) : course.previewVideoUrl ? (
-                    <video
-                      src={course.previewVideoUrl}
+                      src={previewVideo?.url || course.previewVideoUrl}
                       controls
                       className="w-full h-full"
                       poster={course.thumbnail}
+                      autoPlay
                     >
                       Tu navegador no soporta el elemento de video.
                     </video>
