@@ -5,15 +5,17 @@ import {
   useSaveVideoProgressMutation,
 } from "@/api/courses/mutations";
 import { useCourseQuery } from "@/api/courses/query";
+import { usePurchasedCoursesQuery } from "@/api/purchases/query";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { ModuleClass } from "@/types/course";
+import { ModuleClass, Course } from "@/types/course";
 import { Check, Loader2, Play } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import ReactPlayer from "react-player";
+import Link from "next/link";
 
 interface CompletedLessons {
   [key: string]: boolean;
@@ -38,8 +40,16 @@ export default function CoursePage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const { data: course, isLoading, error } = useCourseQuery(id as string);
+  const { data: userCourses } = usePurchasedCoursesQuery();
   const updateCourseProgress = useUpdateCourseProgressMutation();
   const saveVideoProgress = useSaveVideoProgressMutation();
+
+  const hasAccess = useMemo(() => {
+    if (!userCourses || !course) return false;
+    return userCourses.some(
+      (userCourse: Course) => userCourse.id === course.id
+    );
+  }, [userCourses, course]);
 
   const calculateTotalProgress = () => {
     if (!course) return 0;
@@ -180,6 +190,21 @@ export default function CoursePage() {
     return (
       <div className="flex h-screen items-center justify-center">
         Curso no encontrado
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="flex h-screen items-center justify-center flex-col gap-4">
+        <h2 className="text-xl font-bold">Acceso Denegado</h2>
+        <p className="text-muted-foreground">
+          No tienes acceso a este curso. Por favor, adquiere el curso para ver
+          su contenido.
+        </p>
+        <Link href={`/courses/${id}`}>
+          <Button>Ver detalles del curso</Button>
+        </Link>
       </div>
     );
   }

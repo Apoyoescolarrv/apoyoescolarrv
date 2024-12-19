@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Apoyo Escolar RV - Plataforma de Cursos Online
 
-## Getting Started
+Esta plataforma permite a los estudiantes acceder a cursos online con las siguientes características:
 
-First, run the development server:
+## Características Principales
+
+- 🎥 Reproductor de video con seguimiento de progreso
+- 📊 Sistema de progreso por curso y por clase
+- 🛒 Carrito de compras para adquirir cursos
+- 👥 Sistema de autenticación de usuarios
+- 📱 Diseño responsive y moderno
+- 💬 Integración con grupos de WhatsApp
+
+## Tecnologías Utilizadas
+
+- **Frontend:**
+
+  - Next.js 15 (App Router)
+  - React Query para manejo de estado y caché
+  - Tailwind CSS para estilos
+  - Shadcn/ui para componentes de UI
+  - TypeScript para tipado estático
+
+- **Características Técnicas:**
+  - Sistema de autenticación con JWT
+  - Caché y revalidación automática
+  - Manejo de estado global con React Query
+  - Persistencia de progreso local y en servidor
+
+## Instalación
+
+1. Clona el repositorio:
+
+```bash
+git clone https://github.com/tuusuario/apoyoescolarrv.git
+cd apoyoescolarrv
+```
+
+2. Instala las dependencias:
+
+```bash
+npm install
+```
+
+3. Copia el archivo de variables de entorno:
+
+```bash
+cp .env.example .env.local
+```
+
+4. Configura las variables de entorno en `.env.local`
+
+5. Inicia el servidor de desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estructura del Proyecto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  ├── app/                    # App Router de Next.js
+  ├── components/             # Componentes reutilizables
+  ├── api/                    # Servicios y mutaciones de API
+  ├── lib/                    # Utilidades y configuraciones
+  └── types/                  # Tipos de TypeScript
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts Disponibles
 
-## Learn More
+- `npm run dev` - Inicia el servidor de desarrollo
+- `npm run build` - Construye la aplicación para producción
+- `npm run start` - Inicia el servidor de producción
+- `npm run lint` - Ejecuta el linter
 
-To learn more about Next.js, take a look at the following resources:
+## Contribuir
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Haz fork del proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/amazing-feature`)
+3. Commit tus cambios (`git commit -m 'Add some amazing feature'`)
+4. Push a la rama (`git push origin feature/amazing-feature`)
+5. Abre un Pull Request
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Licencia
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
