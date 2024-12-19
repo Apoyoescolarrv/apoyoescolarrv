@@ -6,15 +6,17 @@ import {
 } from "@/api/courses/mutations";
 import { useCourseQuery } from "@/api/courses/query";
 import { usePurchasedCoursesQuery } from "@/api/purchases/query";
+import CourseLoadingSkeleton from "@/components/course/course-loading-skeleton";
+import { VideoPlayer } from "@/components/course/video-player";
 import { Button } from "@/components/ui/button";
-import { Course } from "@/types/course";
+import { Progress } from "@/components/ui/progress";
+import { cn, formatDuration } from "@/lib/utils";
 import { Class } from "@/types/class";
+import { Course } from "@/types/course";
+import { Check, Play } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import CourseLoadingSkeleton from "./loading";
-import { VideoPlayer } from "@/components/course/video-player";
-import { CourseSidebar } from "@/components/course/course-sidebar";
 
 interface CompletedLessons {
   [key: string]: boolean;
@@ -196,50 +198,92 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen">
-      <main className="flex-1 overflow-auto">
-        <div className="container max-w-6xl py-6">
-          {currentLesson && (
-            <VideoPlayer
-              lesson={currentLesson}
-              isCompleted={completedLessons[currentLesson.id]}
-              progress={videoProgress[currentLesson.id] || 0}
-              isPlaying={isPlaying}
-              onProgress={handleProgress}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              onEnded={handleComplete}
-            />
-          )}
-        </div>
-      </main>
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-auto">
+        {/* Main Content */}
+        <main className="md:flex-1 min-h-0 bg-background">
+          <div className="container max-w-6xl py-6">
+            {currentLesson && (
+              <VideoPlayer
+                lesson={currentLesson}
+                isCompleted={completedLessons[currentLesson.id]}
+                progress={videoProgress[currentLesson.id] || 0}
+                isPlaying={isPlaying}
+                onProgress={handleProgress}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={handleComplete}
+              />
+            )}
+          </div>
+        </main>
 
-      {/* Mobile Toggle */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 p-4 bg-background border-t">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() =>
-            document
-              .getElementById("course-sidebar")
-              ?.classList.toggle("translate-x-0")
-          }
-        >
-          Ver contenido del curso
-        </Button>
-      </div>
+        {/* Sidebar */}
+        <aside className="w-full lg:w-[400px] lg:border-l bg-background lg:bg-transparent border-t lg:border-t-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] lg:shadow-none">
+          <div className="p-4 md:p-6">
+            {/* Course Progress */}
+            <div className="mb-6 space-y-2">
+              <div className="flex justify-between items-center">
+                <h2 className="font-semibold">Progreso del curso</h2>
+                <span className="text-sm text-muted-foreground">
+                  {calculateTotalProgress()}%
+                </span>
+              </div>
+              <Progress value={calculateTotalProgress()} />
+            </div>
 
-      {/* Sidebar */}
-      <div
-        id="course-sidebar"
-        className="fixed lg:relative inset-y-0 right-0 w-full lg:w-80 bg-background transform translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out z-50"
-      >
-        <CourseSidebar
-          course={course}
-          currentLesson={currentLesson}
-          completedLessons={completedLessons}
-          onLessonSelect={setCurrentLesson}
-        />
+            {/* Module List */}
+            <div className="space-y-6">
+              {course.modules?.map((module) => (
+                <div key={module.id} className="space-y-2">
+                  <h3 className="font-medium capitalize">{module.title}</h3>
+                  <div className="space-y-1.5">
+                    {module.moduleClasses?.map((moduleClass) => {
+                      const isCurrentLesson =
+                        currentLesson?.id === moduleClass.class?.id;
+                      const isCompleted =
+                        completedLessons[moduleClass.class?.id || ""];
+                      return (
+                        <button
+                          key={moduleClass.id}
+                          onClick={() =>
+                            moduleClass.class &&
+                            setCurrentLesson(moduleClass.class)
+                          }
+                          className={cn(
+                            "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
+                            isCurrentLesson
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted",
+                            "group"
+                          )}
+                        >
+                          <div className="flex-shrink-0">
+                            {isCompleted ? (
+                              <Check className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Play className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {moduleClass.class?.title}
+                            </p>
+                            {moduleClass.class?.duration && (
+                              <p className="text-xs text-muted-foreground">
+                                {formatDuration(moduleClass.class.duration)}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );
