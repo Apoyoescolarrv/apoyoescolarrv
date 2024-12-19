@@ -1,5 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from "axios";
 import { PREFIX } from "./constants";
+import { logout } from "./logout";
 
 const baseURL = `${PREFIX}/api`;
 
@@ -24,6 +25,17 @@ if (typeof window !== "undefined") {
     }
     return config;
   });
+
+  // Interceptor de respuesta para manejar 401
+  http.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        logout();
+      }
+      return Promise.reject(error);
+    }
+  );
 }
 
 // Cliente HTTP para el servidor

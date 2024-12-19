@@ -41,6 +41,71 @@ export default function CoursePage() {
   const updateCourseProgress = useUpdateCourseProgressMutation();
   const saveVideoProgress = useSaveVideoProgressMutation();
 
+  const calculateTotalProgress = () => {
+    if (!course) return 0;
+
+    // Obtener la duración total del curso
+    const totalDuration = course.modules.reduce((total, module) => {
+      const moduleDuration =
+        module.moduleClasses?.reduce((moduleTotal, moduleClass) => {
+          return moduleTotal + (moduleClass.class?.duration ?? 0);
+        }, 0) ?? 0;
+      return total + moduleDuration;
+    }, 0);
+
+    if (totalDuration === 0) return 0;
+
+    // Calcular segundos totales vistos
+    const totalWatched = course.modules.reduce((total, module) => {
+      const moduleWatched =
+        module.moduleClasses?.reduce((moduleTotal, moduleClass) => {
+          const classId = moduleClass.class?.id ?? "";
+          return moduleTotal + (videoProgress[classId] ?? 0);
+        }, 0) ?? 0;
+      return total + moduleWatched;
+    }, 0);
+
+    return Math.round((totalWatched / totalDuration) * 100);
+  };
+
+  const handleProgress = ({ playedSeconds }: { playedSeconds: number }) => {
+    if (!currentLesson) return;
+
+    // Guardar progreso cada 2 segundos
+    if (Math.abs(playedSeconds - (videoProgress[currentLesson.id] || 0)) > 2) {
+      setVideoProgress((prev) => {
+        const updated = { ...prev, [currentLesson.id]: playedSeconds };
+        localStorage.setItem(
+          `${VIDEO_PROGRESS_KEY}_${id}`,
+          JSON.stringify(updated)
+        );
+        return updated;
+      });
+
+      saveVideoProgress.mutate({
+        courseId: id as string,
+        lessonId: currentLesson.id,
+        seconds: Math.floor(playedSeconds),
+      });
+
+      // Actualizar progreso general del curso
+      const totalProgress = calculateTotalProgress();
+      updateCourseProgress.mutate({
+        courseId: id as string,
+        progress: totalProgress,
+      });
+
+      // Si ha visto más del 90%, marcar como completada
+      if (
+        currentLesson.duration &&
+        playedSeconds / currentLesson.duration > 0.9
+      ) {
+        handleComplete();
+      }
+    }
+  };
+
+  // Cargar el progreso guardado al inicio
   useEffect(() => {
     if (course) {
       // Cargar la primera clase disponible
@@ -55,44 +120,14 @@ export default function CoursePage() {
         setCompletedLessons(JSON.parse(saved));
       }
 
+      // Cargar progreso de videos y actualizar progreso general
       const savedProgress = localStorage.getItem(`${VIDEO_PROGRESS_KEY}_${id}`);
       if (savedProgress) {
-        setVideoProgress(JSON.parse(savedProgress));
+        const progress = JSON.parse(savedProgress);
+        setVideoProgress(progress);
       }
     }
   }, [course, id]);
-
-  const handleProgress = ({ playedSeconds }: { playedSeconds: number }) => {
-    if (!currentLesson) return;
-
-    // Guardar progreso cada 2 segundos
-    if (Math.abs(playedSeconds - (videoProgress[currentLesson.id] || 0)) > 2) {
-      // Guardar en localStorage para recuperación rápida
-      setVideoProgress((prev) => {
-        const updated = { ...prev, [currentLesson.id]: playedSeconds };
-        localStorage.setItem(
-          `${VIDEO_PROGRESS_KEY}_${id}`,
-          JSON.stringify(updated)
-        );
-        return updated;
-      });
-
-      // Guardar en la base de datos
-      saveVideoProgress.mutate({
-        courseId: id as string,
-        lessonId: currentLesson.id,
-        seconds: Math.floor(playedSeconds),
-      });
-
-      // Si ha visto más del 90%, marcar como completada
-      if (
-        currentLesson.duration &&
-        playedSeconds / currentLesson.duration > 0.9
-      ) {
-        handleComplete();
-      }
-    }
-  };
 
   const updateProgress = () => {
     if (!course) return;
