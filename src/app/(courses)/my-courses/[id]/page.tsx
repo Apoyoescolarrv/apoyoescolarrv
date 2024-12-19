@@ -1,21 +1,20 @@
 "use client";
 
 import {
-  useUpdateCourseProgressMutation,
   useSaveVideoProgressMutation,
+  useUpdateCourseProgressMutation,
 } from "@/api/courses/mutations";
 import { useCourseQuery } from "@/api/courses/query";
 import { usePurchasedCoursesQuery } from "@/api/purchases/query";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { ModuleClass, Course } from "@/types/course";
-import { Check, Loader2, Play } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
-import ReactPlayer from "react-player";
+import { Course } from "@/types/course";
+import { Class } from "@/types/class";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import CourseLoadingSkeleton from "./loading";
+import { VideoPlayer } from "@/components/course/video-player";
+import { CourseSidebar } from "@/components/course/course-sidebar";
 
 interface CompletedLessons {
   [key: string]: boolean;
@@ -30,19 +29,22 @@ const VIDEO_PROGRESS_KEY = "video_progress";
 
 export default function CoursePage() {
   const { id } = useParams();
-  const [currentLesson, setCurrentLesson] = useState<
-    ModuleClass["class"] | null
-  >(null);
+  const [currentLesson, setCurrentLesson] = useState<Class | null>(null);
   const [completedLessons, setCompletedLessons] = useState<CompletedLessons>(
     {}
   );
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const { data: course, isLoading, error } = useCourseQuery(id as string);
-  const { data: userCourses } = usePurchasedCoursesQuery();
+  const { data: course, isLoading: courseLoading } = useCourseQuery(
+    id as string
+  );
+  const { data: userCourses, isLoading: purchasesLoading } =
+    usePurchasedCoursesQuery();
   const updateCourseProgress = useUpdateCourseProgressMutation();
   const saveVideoProgress = useSaveVideoProgressMutation();
+
+  const isLoading = courseLoading || purchasesLoading;
 
   const hasAccess = useMemo(() => {
     if (!userCourses || !course) return false;
@@ -118,23 +120,19 @@ export default function CoursePage() {
   // Cargar el progreso guardado al inicio
   useEffect(() => {
     if (course) {
-      // Cargar la primera clase disponible
       const firstModule = course.modules[0];
       if (firstModule?.moduleClasses?.[0]?.class) {
         setCurrentLesson(firstModule.moduleClasses[0].class);
       }
 
-      // Cargar datos guardados
       const saved = localStorage.getItem(`${COMPLETED_LESSONS_KEY}_${id}`);
       if (saved) {
         setCompletedLessons(JSON.parse(saved));
       }
 
-      // Cargar progreso de videos y actualizar progreso general
       const savedProgress = localStorage.getItem(`${VIDEO_PROGRESS_KEY}_${id}`);
       if (savedProgress) {
-        const progress = JSON.parse(savedProgress);
-        setVideoProgress(progress);
+        setVideoProgress(JSON.parse(savedProgress));
       }
     }
   }, [course, id]);
@@ -171,19 +169,7 @@ export default function CoursePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Error al cargar el curso
-      </div>
-    );
+    return <CourseLoadingSkeleton />;
   }
 
   if (!course) {
@@ -210,122 +196,50 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <div className="w-64 bg-background border-r">
-        <ScrollArea className="h-full">
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Módulos</h2>
+    <div className="flex flex-col lg:flex-row h-screen">
+      <main className="flex-1 overflow-auto">
+        <div className="container max-w-6xl py-6">
+          {currentLesson && (
+            <VideoPlayer
+              lesson={currentLesson}
+              isCompleted={completedLessons[currentLesson.id]}
+              progress={videoProgress[currentLesson.id] || 0}
+              isPlaying={isPlaying}
+              onProgress={handleProgress}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onEnded={handleComplete}
+            />
+          )}
+        </div>
+      </main>
 
-            {/* Progreso general del curso */}
-            <div className="mb-6 space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Progreso del curso</span>
-                <span>{course.progress ?? 0}%</span>
-              </div>
-              <Progress value={course.progress ?? 0} className="h-2" />
-            </div>
-
-            {course.modules.map((module) => (
-              <div key={module.id} className="mb-6">
-                <h3 className="font-semibold mb-2">{module.title}</h3>
-                <div className="space-y-2">
-                  {module.moduleClasses?.map((moduleClass) => (
-                    <Button
-                      key={moduleClass.classId}
-                      variant={
-                        currentLesson?.id === moduleClass.class?.id
-                          ? "secondary"
-                          : "ghost"
-                      }
-                      className={cn(
-                        "w-full justify-between text-left",
-                        completedLessons[moduleClass.classId] &&
-                          "text-green-600"
-                      )}
-                      onClick={() =>
-                        moduleClass.class && setCurrentLesson(moduleClass.class)
-                      }
-                    >
-                      <span className="flex items-center gap-2">
-                        {completedLessons[moduleClass.classId] ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                        {moduleClass.class?.title}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+      {/* Mobile Toggle */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 p-4 bg-background border-t">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() =>
+            document
+              .getElementById("course-sidebar")
+              ?.classList.toggle("translate-x-0")
+          }
+        >
+          Ver contenido del curso
+        </Button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        {currentLesson && (
-          <div className="p-6 space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold">{currentLesson.title}</h1>
-              <p className="text-muted-foreground mt-2">
-                {currentLesson.description}
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <ReactPlayer
-                  url={currentLesson.videoUrl}
-                  width="100%"
-                  height="100%"
-                  controls
-                  playing={isPlaying}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onProgress={handleProgress}
-                  onEnded={handleComplete}
-                  progressInterval={2000}
-                  config={{
-                    youtube: {
-                      playerVars: {
-                        modestbranding: 1,
-                        rel: 0,
-                        start: Math.floor(
-                          videoProgress[currentLesson?.id || ""] || 0
-                        ),
-                      },
-                    },
-                  }}
-                />
-              </div>
-
-              {/* Video Progress Info */}
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center gap-4">
-                  {completedLessons[currentLesson.id] && (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <Check className="h-4 w-4" />
-                      Completada
-                    </span>
-                  )}
-                </div>
-                <Progress
-                  value={
-                    videoProgress[currentLesson.id]
-                      ? ((videoProgress[currentLesson.id] || 0) /
-                          (currentLesson.duration || 1)) *
-                        100
-                      : 0
-                  }
-                  className="w-1/2 h-1"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Sidebar */}
+      <div
+        id="course-sidebar"
+        className="fixed lg:relative inset-y-0 right-0 w-full lg:w-80 bg-background transform translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out z-50"
+      >
+        <CourseSidebar
+          course={course}
+          currentLesson={currentLesson}
+          completedLessons={completedLessons}
+          onLessonSelect={setCurrentLesson}
+        />
       </div>
     </div>
   );

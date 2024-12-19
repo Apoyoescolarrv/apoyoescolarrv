@@ -4,9 +4,9 @@ export interface Class {
   description: string | null;
   videoUrl: string;
   duration: number | null;
-  isPreview: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isPreview: boolean | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export type CreateClassDto = Omit<Class, "id" | "createdAt" | "updatedAt">;
