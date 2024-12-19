@@ -93,9 +93,9 @@ export default function CourseCard({
           <div className="mt-4 space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Progreso</span>
-              <span>0%</span>
+              <span>{course.progress ?? 0}%</span>
             </div>
-            <Progress value={0} className="h-2" />
+            <Progress value={course.progress ?? 0} className="h-2" />
           </div>
         )}
       </CardContent>

@@ -53,3 +53,39 @@ export const useDeleteThumbnailMutation = () => {
     },
   });
 };
+
+export const useUpdateCourseProgressMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      courseId,
+      progress,
+    }: {
+      courseId: string;
+      progress: number;
+    }) => CoursesService.updateCourseProgress(courseId, progress),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+};
+
+export const useSaveVideoProgressMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      courseId,
+      lessonId,
+      seconds,
+    }: {
+      courseId: string;
+      lessonId: string;
+      seconds: number;
+    }) => CoursesService.saveVideoProgress(courseId, lessonId, seconds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+};

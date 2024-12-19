@@ -93,4 +93,28 @@ export const CoursesService = {
     const { data } = await http.delete<CourseResponse>(`/courses?id=${id}`);
     return data.course;
   },
+
+  updateCourseProgress: async (courseId: string, progress: number) => {
+    const { data } = await http.post<CourseResponse>(
+      `/courses/${courseId}/progress`,
+      {
+        progress,
+      }
+    );
+    return data.course;
+  },
+
+  saveVideoProgress: async (
+    courseId: string,
+    lessonId: string,
+    seconds: number
+  ) => {
+    const { data } = await http.post<CourseResponse>(
+      `/courses/${courseId}/lessons/${lessonId}/progress`,
+      {
+        seconds,
+      }
+    );
+    return data.course;
+  },
 };

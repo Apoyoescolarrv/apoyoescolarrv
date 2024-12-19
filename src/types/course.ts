@@ -42,6 +42,7 @@ export interface Course extends CourseBasics {
     name: string;
   };
   totalDuration?: number;
+  progress?: number;
   _count: {
     modules: number;
     students: number;

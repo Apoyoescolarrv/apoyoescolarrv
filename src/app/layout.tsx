@@ -1,9 +1,8 @@
 import { Providers } from "@/components/ui/providers";
+import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -24,15 +23,8 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${poppins.className} antialiased`}>
         <Providers>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          {children}
+          <Toaster />
         </Providers>
       </body>
     </html>
