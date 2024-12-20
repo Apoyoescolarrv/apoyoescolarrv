@@ -112,7 +112,8 @@ export const CoursesService = {
     const { data } = await http.post<CourseResponse>(
       `/courses/${courseId}/lessons/${lessonId}/progress`,
       {
-        seconds,
+        progressTime: seconds,
+        completed: false,
       }
     );
     return data.course;

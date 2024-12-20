@@ -16,7 +16,7 @@ import { Course } from "@/types/course";
 import { Check, Play } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 interface CompletedLessons {
   [key: string]: boolean;
@@ -55,120 +55,122 @@ export default function CoursePage() {
     );
   }, [userCourses, course]);
 
-  const calculateTotalProgress = () => {
+  const calculateTotalProgress = useCallback(() => {
     if (!course) return 0;
-
-    // Obtener la duración total del curso
-    const totalDuration = course.modules.reduce((total, module) => {
-      const moduleDuration =
-        module.moduleClasses?.reduce((moduleTotal, moduleClass) => {
-          return moduleTotal + (moduleClass.class?.duration ?? 0);
-        }, 0) ?? 0;
-      return total + moduleDuration;
-    }, 0);
-
-    if (totalDuration === 0) return 0;
-
-    // Calcular segundos totales vistos
-    const totalWatched = course.modules.reduce((total, module) => {
-      const moduleWatched =
-        module.moduleClasses?.reduce((moduleTotal, moduleClass) => {
-          const classId = moduleClass.class?.id ?? "";
-          return moduleTotal + (videoProgress[classId] ?? 0);
-        }, 0) ?? 0;
-      return total + moduleWatched;
-    }, 0);
-
-    return Math.round((totalWatched / totalDuration) * 100);
-  };
-
-  const handleProgress = ({ playedSeconds }: { playedSeconds: number }) => {
-    if (!currentLesson) return;
-
-    // Guardar progreso cada 2 segundos
-    if (Math.abs(playedSeconds - (videoProgress[currentLesson.id] || 0)) > 2) {
-      setVideoProgress((prev) => {
-        const updated = { ...prev, [currentLesson.id]: playedSeconds };
-        localStorage.setItem(
-          `${VIDEO_PROGRESS_KEY}_${id}`,
-          JSON.stringify(updated)
-        );
-        return updated;
-      });
-
-      saveVideoProgress.mutate({
-        courseId: id as string,
-        lessonId: currentLesson.id,
-        seconds: Math.floor(playedSeconds),
-      });
-
-      // Actualizar progreso general del curso
-      const totalProgress = calculateTotalProgress();
-      updateCourseProgress.mutate({
-        courseId: id as string,
-        progress: totalProgress,
-      });
-
-      // Si ha visto más del 90%, marcar como completada
-      if (
-        currentLesson.duration &&
-        playedSeconds / currentLesson.duration > 0.9
-      ) {
-        handleComplete();
-      }
-    }
-  };
-
-  // Cargar el progreso guardado al inicio
-  useEffect(() => {
-    if (course) {
-      const firstModule = course.modules[0];
-      if (firstModule?.moduleClasses?.[0]?.class) {
-        setCurrentLesson(firstModule.moduleClasses[0].class);
-      }
-
-      const saved = localStorage.getItem(`${COMPLETED_LESSONS_KEY}_${id}`);
-      if (saved) {
-        setCompletedLessons(JSON.parse(saved));
-      }
-
-      const savedProgress = localStorage.getItem(`${VIDEO_PROGRESS_KEY}_${id}`);
-      if (savedProgress) {
-        setVideoProgress(JSON.parse(savedProgress));
-      }
-    }
-  }, [course, id]);
-
-  const updateProgress = () => {
-    if (!course) return;
 
     const allClasses = course.modules.flatMap(
       (m) => m.moduleClasses?.map((mc) => mc.class) ?? []
     );
     const totalClasses = allClasses.length;
-    if (totalClasses === 0) return;
+    if (totalClasses === 0) return 0;
 
     const completedCount =
       Object.values(completedLessons).filter(Boolean).length;
-    const progress = Math.round((completedCount / totalClasses) * 100);
+    return Math.round((completedCount / totalClasses) * 100);
+  }, [course, completedLessons]);
 
-    updateCourseProgress.mutate({ courseId: id as string, progress });
-  };
+  const handleProgress = useCallback(
+    ({ playedSeconds }: { playedSeconds: number }) => {
+      if (!currentLesson || !isPlaying) return;
 
-  const handleComplete = () => {
-    if (!currentLesson) return;
+      // Guardar progreso cada 2 segundos
+      if (
+        Math.abs(playedSeconds - (videoProgress[currentLesson.id] || 0)) > 2
+      ) {
+        // Actualizar progreso local
+        setVideoProgress((prev) => {
+          const updated = { ...prev, [currentLesson.id]: playedSeconds };
+          localStorage.setItem(
+            `${VIDEO_PROGRESS_KEY}_${id}`,
+            JSON.stringify(updated)
+          );
+          return updated;
+        });
 
-    setCompletedLessons((prev) => {
-      const updated = { ...prev, [currentLesson.id]: true };
-      localStorage.setItem(
-        `${COMPLETED_LESSONS_KEY}_${id}`,
-        JSON.stringify(updated)
-      );
-      return updated;
-    });
+        // Guardar progreso en el servidor con debounce
+        const shouldComplete =
+          currentLesson.duration &&
+          playedSeconds / currentLesson.duration > 0.9 &&
+          !completedLessons[currentLesson.id];
 
-    updateProgress();
-  };
+        saveVideoProgress.mutate({
+          courseId: id as string,
+          lessonId: currentLesson.id,
+          seconds: Math.floor(playedSeconds),
+        });
+
+        if (shouldComplete) {
+          setCompletedLessons((prev) => {
+            const updated = { ...prev, [currentLesson.id]: true };
+            localStorage.setItem(
+              `${COMPLETED_LESSONS_KEY}_${id}`,
+              JSON.stringify(updated)
+            );
+            return updated;
+          });
+        }
+      }
+    },
+    [
+      currentLesson,
+      videoProgress,
+      id,
+      completedLessons,
+      saveVideoProgress,
+      isPlaying,
+    ]
+  );
+
+  const handleEnded = useCallback(() => {
+    if (!currentLesson?.duration) return;
+    handleProgress({ playedSeconds: currentLesson.duration });
+  }, [currentLesson, handleProgress]);
+
+  // Cargar progreso inicial
+  useEffect(() => {
+    if (!course) return;
+
+    // Cargar la primera clase si no hay ninguna seleccionada
+    if (!currentLesson) {
+      const firstModule = course.modules[0];
+      if (firstModule?.moduleClasses?.[0]?.class) {
+        setCurrentLesson(firstModule.moduleClasses[0].class);
+      }
+    }
+
+    // Cargar progreso guardado
+    const saved = localStorage.getItem(`${COMPLETED_LESSONS_KEY}_${id}`);
+    if (saved) {
+      setCompletedLessons(JSON.parse(saved));
+    }
+
+    const savedProgress = localStorage.getItem(`${VIDEO_PROGRESS_KEY}_${id}`);
+    if (savedProgress) {
+      setVideoProgress(JSON.parse(savedProgress));
+    }
+  }, [course, id, currentLesson]);
+
+  // Actualizar progreso del curso con debounce
+  useEffect(() => {
+    if (!course || !isPlaying) return;
+
+    const debouncedUpdate = setTimeout(() => {
+      const progress = calculateTotalProgress();
+      updateCourseProgress.mutate({
+        courseId: id as string,
+        progress,
+      });
+    }, 5000); // Debounce de 5 segundos
+
+    return () => clearTimeout(debouncedUpdate);
+  }, [
+    course,
+    id,
+    completedLessons,
+    calculateTotalProgress,
+    updateCourseProgress,
+    isPlaying,
+  ]);
 
   if (isLoading) {
     return <CourseLoadingSkeleton />;
@@ -212,7 +214,7 @@ export default function CoursePage() {
                 onProgress={handleProgress}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
-                onEnded={handleComplete}
+                onEnded={handleEnded}
               />
             )}
           </div>
