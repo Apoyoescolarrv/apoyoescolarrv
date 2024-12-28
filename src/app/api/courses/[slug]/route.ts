@@ -1,29 +1,34 @@
 import { db } from "@/db/drizzle";
-import { courses, moduleClasses, modules, classes } from "@/db/schema";
+import {
+  courses,
+  moduleClasses,
+  modules,
+  classes,
+  categories,
+} from "@/db/schema";
 import { buildEndpoint } from "@/lib/build-endpoint";
-import { verifyToken } from "@/lib/verify-token";
 import { CourseModule, ModuleClass } from "@/types/course";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = buildEndpoint(
-  verifyToken(async (req: NextRequest, userId: string, isAdmin: boolean) => {
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "No tienes permisos para realizar esta acción" },
-        { status: 403 }
-      );
-    }
-
-    const params = { id: req.url.split("/").pop()! };
+  async (req: NextRequest) => {
+    const slug = req.nextUrl.pathname.split("/")[3];
 
     const course = await db
-      .select()
+      .select({
+        courses: courses,
+        modules: modules,
+        module_classes: moduleClasses,
+        classes: classes,
+        category: categories,
+      })
       .from(courses)
-      .where(eq(courses.id, params.id))
+      .where(eq(courses.slug, slug))
       .leftJoin(modules, eq(modules.courseId, courses.id))
       .leftJoin(moduleClasses, eq(moduleClasses.moduleId, modules.id))
-      .leftJoin(classes, eq(classes.id, moduleClasses.classId));
+      .leftJoin(classes, eq(classes.id, moduleClasses.classId))
+      .leftJoin(categories, eq(categories.id, courses.categoryId));
 
     if (!course || course.length === 0) {
       return NextResponse.json(
@@ -59,10 +64,11 @@ export const GET = buildEndpoint(
     return NextResponse.json({
       course: {
         ...courseData,
-        modules: Object.values(courseModules),
+        category: course[0].category,
+        modules: Object.values(courseModules).sort((a, b) => a.order - b.order),
       },
     });
-  }),
+  },
   {
     errorMessage: "Error al obtener el curso",
   }

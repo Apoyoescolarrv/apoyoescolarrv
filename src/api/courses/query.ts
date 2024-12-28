@@ -26,9 +26,9 @@ export const useCoursesQuery = ({
   });
 };
 
-export const useCourseQuery = (id: string) => {
+export const useCourseQuery = (slug: string) => {
   return useQuery({
-    queryKey: ["course", id],
-    queryFn: () => CoursesService.getCourse(id),
+    queryKey: ["course", slug],
+    queryFn: () => CoursesService.getCourse(slug),
   });
 };

@@ -30,9 +30,10 @@ export default function CourseCard({
   const router = useRouter();
 
   const handleCardClick = useCallback(() => {
-    const path = isOwned ? `/my-courses/${course.id}` : `/courses/${course.id}`;
+    const path = `/${isOwned ? "my-courses" : "courses"}/${course.slug}`;
+
     router.push(path);
-  }, [course.id, isOwned, router]);
+  }, [course.slug, isOwned, router]);
 
   return (
     <Card
@@ -103,9 +104,7 @@ export default function CourseCard({
       <CardFooter>
         <div className="flex flex-col sm:flex-row gap-2 w-full pt-4">
           <Link
-            href={
-              isOwned ? `/my-courses/${course.id}` : `/courses/${course.id}`
-            }
+            href={`/${isOwned ? "my-courses" : "courses"}/${course.slug}`}
             className="w-full"
           >
             <Button

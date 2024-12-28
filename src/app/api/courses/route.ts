@@ -73,6 +73,7 @@ export const GET = buildEndpoint(
         .select({
           id: courses.id,
           title: courses.title,
+          slug: courses.slug,
           description: courses.description,
           price: courses.price,
           isActive: courses.isActive,
@@ -147,11 +148,13 @@ export const POST = buildEndpoint(
       .insert(courses)
       .values({
         title: data.title,
+        slug: data.slug,
         description: data.description,
         categoryId: data.categoryId,
         price: Number(data.price),
         isActive: data.isActive,
         whatsappGroupId: data.whatsappGroupId,
+        thumbnail: data.thumbnail,
       })
       .returning();
 
@@ -206,7 +209,10 @@ export const PUT = buildEndpoint(
     // Actualizar el curso
     const [course] = await db
       .update(courses)
-      .set(courseData)
+      .set({
+        ...courseData,
+        price: Number(courseData.price),
+      })
       .where(eq(courses.id, id))
       .returning();
 

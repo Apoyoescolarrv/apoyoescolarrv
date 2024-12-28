@@ -69,7 +69,7 @@ export default function PurchasedCoursesPage() {
           </CardContent>
 
           <div className="p-6 pt-0">
-            <Link href={`/my-courses/${course.id}`}>
+            <Link href={`/my-courses/${course.slug}`}>
               <Button className="w-full gap-2">
                 <Play className="h-4 w-4" />
                 Continuar

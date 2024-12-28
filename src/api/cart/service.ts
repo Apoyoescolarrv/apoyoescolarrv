@@ -16,13 +16,13 @@ export class CartService {
     return data.data;
   }
 
-  static async addToCart(courseId: string): Promise<Course> {
-    const { data } = await http.post<CartItemResponse>("/cart", { courseId });
+  static async addToCart(slug: string): Promise<Course> {
+    const { data } = await http.post<CartItemResponse>("/cart", { slug });
     return data.data;
   }
 
-  static async removeFromCart(courseId: string): Promise<void> {
-    await http.delete(`/cart/${courseId}`);
+  static async removeFromCart(slug: string): Promise<void> {
+    await http.delete(`/cart/${slug}`);
   }
 
   static async clearCart(): Promise<void> {

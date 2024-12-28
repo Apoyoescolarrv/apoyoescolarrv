@@ -58,12 +58,13 @@ export function CourseCreationStepper({
     return {
       basics: {
         title: defaultValues.title,
-        description: defaultValues.description || "",
+        description: defaultValues.description ?? "",
         price: defaultValues.price,
-        categoryId: defaultValues.categoryId || "",
+        categoryId: defaultValues.categoryId ?? "",
         isActive: defaultValues.isActive,
-        whatsappGroupId: defaultValues.whatsappGroupId || "",
-        thumbnail: defaultValues.thumbnail || "",
+        whatsappGroupId: defaultValues.whatsappGroupId ?? "",
+        thumbnail: defaultValues.thumbnail ?? "",
+        slug: defaultValues.slug ?? "",
       },
       modules: defaultValues.modules.map((module) => ({
         id: module.id,

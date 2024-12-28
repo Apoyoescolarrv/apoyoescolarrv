@@ -23,6 +23,7 @@ export const categories = pgTable("categories", {
 export const courses = pgTable("courses", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
   description: text("description"),
   categoryId: uuid("category_id").references(() => categories.id, {
     onDelete: "set null",
@@ -116,17 +117,19 @@ export const userProgress = pgTable("user_progress", {
     .$onUpdate(() => new Date()),
 });
 
-export const sharedClasses = pgTable("shared_classes", {
+export const userCourseProgress = pgTable("user_course_progress", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sourceCourseId: uuid("source_course_id")
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  courseId: uuid("course_id")
     .references(() => courses.id, { onDelete: "cascade" })
     .notNull(),
-  targetCourseId: uuid("target_course_id")
-    .references(() => courses.id, { onDelete: "cascade" })
-    .notNull(),
-  classId: uuid("class_id")
-    .references(() => classes.id, { onDelete: "cascade" })
-    .notNull(),
+  progressPercentage: integer("progress_percentage").default(0).notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const cartItems = pgTable("cart_items", {

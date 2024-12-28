@@ -2,7 +2,6 @@
 
 import { useInfiniteCategoriesQuery } from "@/api/categories/query";
 import { Button } from "@/components/ui/button";
-import { useDebounce } from "@/hooks/use-debounce";
 import {
   Command,
   CommandEmpty,
@@ -14,34 +13,42 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { MediaUpload } from "@/components/ui/media-upload";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
+import { cn, generateSlug } from "@/lib/utils";
 import { CourseFormData } from "@/types/course";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { MediaUpload } from "@/components/ui/media-upload";
 
 const formSchema = z.object({
   title: z.string().min(2, {
     message: "El título debe tener al menos 2 caracteres.",
   }),
+  slug: z
+    .string()
+    .min(2, { message: "El slug debe tener al menos 2 caracteres." })
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+      message:
+        "El slug solo puede contener letras minúsculas, números y guiones",
+    }),
   description: z.string().default(""),
   price: z.number().min(0, {
     message: "El precio debe ser mayor a 0.",
@@ -83,13 +90,14 @@ export function CourseBasicsForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: defaultValues?.title || "",
-      description: defaultValues?.description || "",
+      title: defaultValues?.title,
+      slug: defaultValues?.slug,
+      description: defaultValues?.description,
       price: defaultValues?.price || 0,
-      categoryId: defaultValues?.categoryId || "",
+      categoryId: defaultValues?.categoryId,
       isActive: defaultValues?.isActive || false,
-      whatsappGroupId: defaultValues?.whatsappGroupId || "",
-      thumbnail: defaultValues?.thumbnail || "",
+      whatsappGroupId: defaultValues?.whatsappGroupId,
+      thumbnail: defaultValues?.thumbnail,
     },
   });
 
@@ -133,8 +141,49 @@ export function CourseBasicsForm({
                 <FormItem>
                   <FormLabel>Título del Curso</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: Matemáticas Básicas" {...field} />
+                    <Input
+                      placeholder="Ej: Matemáticas Básicas"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        const currentSlug = form.getValues("slug");
+                        if (
+                          !currentSlug ||
+                          currentSlug === generateSlug(field.value)
+                        ) {
+                          form.setValue("slug", generateSlug(e.target.value));
+                        }
+                      }}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL Amigable (Slug)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ej: matematicas-basicas"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, "");
+                        field.onChange(value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL amigable para el curso. Se genera automáticamente del
+                    título pero puedes personalizarla. Solo puede contener
+                    letras minúsculas, números y guiones.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -199,9 +248,10 @@ export function CourseBasicsForm({
                       placeholder="0.00"
                       className="pl-7"
                       {...field}
+                      value={field.value || ""}
                       onChange={(e) => {
                         const value = e.target.value;
-                        field.onChange(value ? Number(value) : 0);
+                        field.onChange(value === "" ? 0 : Number(value));
                       }}
                     />
                   </div>

@@ -31,8 +31,8 @@ export function CartNav() {
 
   const handleCheckout = async () => {
     try {
-      const courseIds = cartItems.map((item) => item.id);
-      await purchaseCourses(courseIds);
+      const slugs = cartItems.map((item) => item.slug);
+      await purchaseCourses(slugs);
       await clearCart();
       toast({
         title: "¡Compra realizada con éxito!",
@@ -48,9 +48,9 @@ export function CartNav() {
     }
   };
 
-  const handleRemoveItem = async (courseId: string) => {
+  const handleRemoveItem = async (slug: string) => {
     try {
-      await removeFromCart(courseId);
+      await removeFromCart(slug);
       toast({
         title: "Curso eliminado del carrito",
       });
@@ -111,7 +111,7 @@ export function CartNav() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleRemoveItem(item.id)}
+                onClick={() => handleRemoveItem(item.slug)}
               >
                 <X className="h-4 w-4" />
               </Button>

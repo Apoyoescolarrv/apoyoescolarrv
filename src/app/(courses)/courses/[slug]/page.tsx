@@ -38,8 +38,8 @@ const containerAnimation = {
 
 export default function CoursePage() {
   const router = useRouter();
-  const { id } = useParams();
-  const { data: course, isLoading } = useCourseQuery(id as string);
+  const { slug } = useParams();
+  const { data: course, isLoading } = useCourseQuery(slug as string);
   const [previewVideo, setPreviewVideo] = useState<{
     url: string;
     title: string;

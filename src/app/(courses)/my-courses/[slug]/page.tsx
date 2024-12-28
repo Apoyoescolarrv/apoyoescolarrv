@@ -26,11 +26,8 @@ interface VideoProgress {
   [key: string]: number; // lessonId -> seconds
 }
 
-const COMPLETED_LESSONS_KEY = "completed_lessons";
-const VIDEO_PROGRESS_KEY = "video_progress";
-
 export default function CoursePage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [currentLesson, setCurrentLesson] = useState<Class | null>(null);
   const [completedLessons, setCompletedLessons] = useState<CompletedLessons>(
     {}
@@ -39,7 +36,7 @@ export default function CoursePage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const { data: course, isLoading: courseLoading } = useCourseQuery(
-    id as string
+    slug as string
   );
   const { data: userCourses, isLoading: purchasesLoading } =
     usePurchasedCoursesQuery();
@@ -78,35 +75,35 @@ export default function CoursePage() {
         Math.abs(playedSeconds - (videoProgress[currentLesson.id] || 0)) > 2
       ) {
         // Actualizar progreso local
-        setVideoProgress((prev) => {
-          const updated = { ...prev, [currentLesson.id]: playedSeconds };
-          localStorage.setItem(
-            `${VIDEO_PROGRESS_KEY}_${id}`,
-            JSON.stringify(updated)
-          );
-          return updated;
-        });
+        setVideoProgress((prev) => ({
+          ...prev,
+          [currentLesson.id]: playedSeconds,
+        }));
 
-        // Guardar progreso en el servidor con debounce
+        // Guardar progreso en el servidor
         const shouldComplete =
-          currentLesson.duration &&
+          currentLesson.duration != null &&
           playedSeconds / currentLesson.duration > 0.9 &&
           !completedLessons[currentLesson.id];
 
         saveVideoProgress.mutate({
-          courseId: id as string,
+          slug: slug as string,
           lessonId: currentLesson.id,
           seconds: Math.floor(playedSeconds),
+          completed: shouldComplete,
         });
 
         if (shouldComplete) {
-          setCompletedLessons((prev) => {
-            const updated = { ...prev, [currentLesson.id]: true };
-            localStorage.setItem(
-              `${COMPLETED_LESSONS_KEY}_${id}`,
-              JSON.stringify(updated)
-            );
-            return updated;
+          setCompletedLessons((prev) => ({
+            ...prev,
+            [currentLesson.id]: true,
+          }));
+
+          // Actualizar progreso total del curso
+          const progress = calculateTotalProgress();
+          updateCourseProgress.mutate({
+            slug: slug as string,
+            progress,
           });
         }
       }
@@ -114,10 +111,12 @@ export default function CoursePage() {
     [
       currentLesson,
       videoProgress,
-      id,
+      slug,
       completedLessons,
       saveVideoProgress,
       isPlaying,
+      calculateTotalProgress,
+      updateCourseProgress,
     ]
   );
 
@@ -138,39 +137,23 @@ export default function CoursePage() {
       }
     }
 
-    // Cargar progreso guardado
-    const saved = localStorage.getItem(`${COMPLETED_LESSONS_KEY}_${id}`);
-    if (saved) {
-      setCompletedLessons(JSON.parse(saved));
-    }
+    // Cargar progreso desde el curso
+    const completedLessonsFromCourse: CompletedLessons = {};
+    const videoProgressFromCourse: VideoProgress = {};
 
-    const savedProgress = localStorage.getItem(`${VIDEO_PROGRESS_KEY}_${id}`);
-    if (savedProgress) {
-      setVideoProgress(JSON.parse(savedProgress));
-    }
-  }, [course, id, currentLesson]);
-
-  // Actualizar progreso del curso con debounce
-  useEffect(() => {
-    if (!course || !isPlaying) return;
-
-    const debouncedUpdate = setTimeout(() => {
-      const progress = calculateTotalProgress();
-      updateCourseProgress.mutate({
-        courseId: id as string,
-        progress,
+    course.modules.forEach((module) => {
+      module.moduleClasses?.forEach((moduleClass) => {
+        if (moduleClass.class?.progress) {
+          const { completed, progressTime } = moduleClass.class.progress;
+          completedLessonsFromCourse[moduleClass.class.id] = completed;
+          videoProgressFromCourse[moduleClass.class.id] = progressTime;
+        }
       });
-    }, 5000); // Debounce de 5 segundos
+    });
 
-    return () => clearTimeout(debouncedUpdate);
-  }, [
-    course,
-    id,
-    completedLessons,
-    calculateTotalProgress,
-    updateCourseProgress,
-    isPlaying,
-  ]);
+    setCompletedLessons(completedLessonsFromCourse);
+    setVideoProgress(videoProgressFromCourse);
+  }, [course, slug, currentLesson]);
 
   if (isLoading) {
     return <CourseLoadingSkeleton />;
@@ -192,7 +175,7 @@ export default function CoursePage() {
           No tienes acceso a este curso. Por favor, adquiere el curso para ver
           su contenido.
         </p>
-        <Link href={`/courses/${id}`}>
+        <Link href={`/courses/${slug}`}>
           <Button>Ver detalles del curso</Button>
         </Link>
       </div>

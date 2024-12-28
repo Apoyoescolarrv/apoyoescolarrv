@@ -7,6 +7,11 @@ export interface Class {
   isPreview: boolean | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  progress?: {
+    completed: boolean;
+    progressTime: number;
+    lastWatchedAt: string;
+  };
 }
 
 export type CreateClassDto = Omit<Class, "id" | "createdAt" | "updatedAt">;

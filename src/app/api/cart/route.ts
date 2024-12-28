@@ -29,9 +29,9 @@ export const GET = buildEndpoint(
 
 export const POST = buildEndpoint(
   verifyToken(async (req, userId) => {
-    const { courseId } = await req.json();
+    const { slug } = await req.json();
 
-    if (!courseId) {
+    if (!slug) {
       return NextResponse.json(
         { error: "No se especificó el curso" },
         { status: 400 }
@@ -39,7 +39,7 @@ export const POST = buildEndpoint(
     }
 
     const course = await db.query.courses.findFirst({
-      where: eq(courses.id, courseId),
+      where: eq(courses.slug, slug),
     });
 
     if (!course) {
@@ -52,7 +52,7 @@ export const POST = buildEndpoint(
     const existingItem = await db.query.cartItems.findFirst({
       where: and(
         eq(cartItems.userId, userId),
-        eq(cartItems.courseId, courseId)
+        eq(cartItems.courseId, course.id)
       ),
     });
 
@@ -65,7 +65,7 @@ export const POST = buildEndpoint(
 
     await db.insert(cartItems).values({
       userId,
-      courseId,
+      courseId: course.id,
     });
 
     return NextResponse.json({

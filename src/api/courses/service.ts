@@ -9,6 +9,7 @@ export type CourseOrderByField =
 
 export interface CreateCourseBasicData {
   title: string;
+  slug: string;
   description?: string;
   categoryId?: string;
   price: number;
@@ -20,6 +21,7 @@ export interface CreateCourseBasicData {
 
 export interface CreateCourseData {
   title: string;
+  slug: string;
   description: string;
   price: number;
   categoryId: string;
@@ -68,8 +70,8 @@ export const CoursesService = {
     return data;
   },
 
-  getCourse: async (id: string) => {
-    const { data } = await http.get<CourseResponse>(`/courses/${id}`);
+  getCourse: async (slug: string) => {
+    const { data } = await http.get<CourseResponse>(`/courses/${slug}`);
     return data.course;
   },
 
@@ -94,9 +96,9 @@ export const CoursesService = {
     return data.course;
   },
 
-  updateCourseProgress: async (courseId: string, progress: number) => {
+  updateCourseProgress: async (slug: string, progress: number) => {
     const { data } = await http.post<CourseResponse>(
-      `/courses/${courseId}/progress`,
+      `/courses/${slug}/progress`,
       {
         progress,
       }
@@ -105,15 +107,16 @@ export const CoursesService = {
   },
 
   saveVideoProgress: async (
-    courseId: string,
+    slug: string,
     lessonId: string,
-    seconds: number
+    seconds: number,
+    completed: boolean
   ) => {
     const { data } = await http.post<CourseResponse>(
-      `/courses/${courseId}/lessons/${lessonId}/progress`,
+      `/courses/${slug}/lessons/${lessonId}/progress`,
       {
         progressTime: seconds,
-        completed: false,
+        completed,
       }
     );
     return data.course;

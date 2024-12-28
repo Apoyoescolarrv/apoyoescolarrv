@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
 
 export const POST = buildEndpoint(
   verifyToken(async (req, userId) => {
-    const { courseIds } = await req.json();
+    const { slugs } = await req.json();
 
-    if (!courseIds?.length) {
+    if (!slugs?.length) {
       return NextResponse.json(
         { error: "No se especificaron cursos" },
         { status: 400 }

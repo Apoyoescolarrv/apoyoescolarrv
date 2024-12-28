@@ -59,12 +59,12 @@ export const useUpdateCourseProgressMutation = () => {
 
   return useMutation({
     mutationFn: async ({
-      courseId,
+      slug,
       progress,
     }: {
-      courseId: string;
+      slug: string;
       progress: number;
-    }) => CoursesService.updateCourseProgress(courseId, progress),
+    }) => CoursesService.updateCourseProgress(slug, progress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
     },
@@ -76,14 +76,16 @@ export const useSaveVideoProgressMutation = () => {
 
   return useMutation({
     mutationFn: async ({
-      courseId,
+      slug,
       lessonId,
       seconds,
+      completed,
     }: {
-      courseId: string;
+      slug: string;
       lessonId: string;
       seconds: number;
-    }) => CoursesService.saveVideoProgress(courseId, lessonId, seconds),
+      completed: boolean;
+    }) => CoursesService.saveVideoProgress(slug, lessonId, seconds, completed),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
     },

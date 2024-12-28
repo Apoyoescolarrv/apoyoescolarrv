@@ -1,5 +1,6 @@
 export interface CourseBasics {
   title: string;
+  slug: string;
   description: string;
   price: number;
   categoryId: string;
@@ -29,6 +30,11 @@ export interface ModuleClass {
     isPreview: boolean | null;
     createdAt: Date | null;
     updatedAt: Date | null;
+    progress?: {
+      completed: boolean;
+      progressTime: number;
+      lastWatchedAt: string;
+    };
   };
 }
 

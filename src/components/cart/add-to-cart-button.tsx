@@ -36,12 +36,12 @@ export function AddToCartButton({
     e.stopPropagation();
     try {
       if (isInCart) {
-        await removeFromCart(course.id);
+        await removeFromCart(course.slug);
         toast({
           title: "Curso eliminado del carrito",
         });
       } else {
-        await addToCart(course.id);
+        await addToCart(course.slug);
         toast({
           title: "Curso añadido al carrito",
         });
