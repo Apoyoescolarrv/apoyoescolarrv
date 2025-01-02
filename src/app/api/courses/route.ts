@@ -216,14 +216,11 @@ export const PUT = buildEndpoint(
       .where(eq(courses.id, id))
       .returning();
 
-    // Eliminar módulos existentes (las clases se eliminarán en cascada)
     await db.delete(modules).where(eq(modules.courseId, id));
 
-    // Crear los nuevos módulos y sus clases
     const createdModules = await Promise.all(
       newModules.map(
         async (moduleData: CreateCourseData["modules"][0], index: number) => {
-          // Crear módulo
           const [createdModule] = await db
             .insert(modules)
             .values({
@@ -233,7 +230,6 @@ export const PUT = buildEndpoint(
             })
             .returning();
 
-          // Crear clases del módulo
           const createdClasses = moduleData.classes?.length
             ? await db
                 .insert(moduleClasses)

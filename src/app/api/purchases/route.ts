@@ -16,6 +16,7 @@ export const GET = buildEndpoint(
         price: courses.price,
         isActive: courses.isActive,
         createdAt: courses.createdAt,
+        slug: courses.slug,
         updatedAt: courses.updatedAt,
       })
       .from(purchases)

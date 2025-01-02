@@ -187,13 +187,13 @@ export default function CoursePage() {
       <div className="flex-1 flex flex-col lg:flex-row overflow-auto">
         {/* Main Content */}
         <main className="md:flex-1 min-h-0 bg-background">
-          <div className="container max-w-6xl py-6">
+          <div className="container max-w-6xl">
             {currentLesson && (
               <VideoPlayer
                 lesson={currentLesson}
-                isCompleted={completedLessons[currentLesson.id]}
-                progress={videoProgress[currentLesson.id] || 0}
                 isPlaying={isPlaying}
+                isCompleted={completedLessons[currentLesson.id] || false}
+                progress={videoProgress[currentLesson.id] || 0}
                 onProgress={handleProgress}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}

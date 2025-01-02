@@ -111,7 +111,7 @@ export default function CourseCard({
               className="w-full"
               variant={isOwned ? "default" : "secondary"}
             >
-              {isOwned && <Play className="h-4 w-4 mr-2" />}
+              {isOwned && <Play className="h-4 w-4" />}
               {isOwned ? "Continuar" : "Ver Detalles"}
             </Button>
           </Link>
